@@ -1,6 +1,5 @@
 name: Compile Mod on Push
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches: [ main ]
 jobs:
@@ -20,17 +19,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: latest
+          release_name: Release
           body: |
             Automated Release by GitHub Action CI
           draft: false
           prerelease: false
           
-      - name: Upload Compiled GSC
-        id: upload-compiled-gsc
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: "marvinpinto/action-automatic-releases@latest"
         with:
-          files: zm-killcams.gsc
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: false
+          title: "Release"
+          files: |
+            zm-killcams.gsc
