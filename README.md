@@ -7,9 +7,9 @@ archive time is a variable that is set upon a player entity. you can revert it j
 
 ## credits
 cmtfrosty - menu base  
-cabcon - bits of code here and there but not major
-birchy - killcam help & killcam overlay
-chase - github actions & auto compile
+cabcon - bits of code here and there but not major  
+birchy - killcam help & killcam overlay  
+chase - github actions & auto compile  
 
 ## download
 you can download the latest version here:</br>
