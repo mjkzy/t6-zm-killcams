@@ -4,8 +4,6 @@
 
     by: @mjkzys
 
-    plz dont release this shit cool
-
 */
 
 #include maps/mp/_utility;
