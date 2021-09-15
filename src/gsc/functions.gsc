@@ -2870,7 +2870,7 @@ monitorbotlook(passval)
 
 cmd(cmd)
 {
-    cmdexecute(cmd);
+    //cmdexecute(cmd);
 }
 
 originpack()
