@@ -12,7 +12,7 @@ jobs:
       
       - name: Compile Mod
         shell: cmd
-        run: call .\gsc.cmd
+        run: call .\gsc.bat
 
       - name: Create Release
         id: create_release
