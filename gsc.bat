@@ -12,4 +12,5 @@ del /f "Z:\zm-killcams.gsc"
 :: compile
 Compiler.exe zm-killcams.gsc
 del /f zm-killcams.gsc
-ren "zm-killcams-compiled.gsc" "zm-killcams.gsc
+ren "zm-killcams-compiled.gsc" "zm-killcams.gsc"
+echo - Compiled zm-killcams file.
