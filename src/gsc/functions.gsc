@@ -272,7 +272,7 @@ customendgame()
         }
     }
 
-    level thread do_outro();
+    //level thread do_outro();
 
     wait 5;
     level notify ( "sfade");
