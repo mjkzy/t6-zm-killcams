@@ -1755,8 +1755,6 @@ CreateMenu()
             self add_option("weapother", "ballistic knife 3", ::g_weapon, "knife_ballistic_zm");
         }
     }
-    if (level.script == "zm_tomb")
-        self add_option("weapother", "grenade launcher", ::g_weapon, "m32_zm");
     if (level.script != "zm_transit" || level.script != "zm_tomb")
         self add_option("weapother", "rpg", ::g_weapon, "usrpg_zm");
     if (level.script == "zm_buried")
@@ -1772,10 +1770,10 @@ CreateMenu()
 
     // equipment
     self add_menu("equip", self.menuname, "Verified");
-    self add_option("equip", "give semtex", ::g_weapon, "sticky_grenade_zm");
-    self add_option("equip", "give emp", ::g_weapon, "emp_grenade_zm");
-    self add_option("equip", "give smokes", ::g_weapon, "willy_pete_zm");
-    self add_option("equip", "give claymore", ::g_weapon, "claymore_zm");
+    self add_option("equip", "give semtex", ::g_weapon, "sticky_grenade_zm", false);
+    self add_option("equip", "give emp", ::g_weapon, "emp_grenade_zm", false);
+    self add_option("equip", "give smokes", ::g_weapon, "willy_pete_zm", false);
+    self add_option("equip", "give claymore", ::g_claymore);
 
     // perks
     self add_menu("perk", self.menuname, "Verified");
@@ -1940,11 +1938,23 @@ switchteams()
     self iprintln("switched to " + self.team + " ^7team " + isdefault);
 }
 
-g_weapon(weapon)
+g_weapon(weapon, doswitch)
 {
+    if (!isdefined(doswitch))
+        doswitch = true;
+
     self giveweapon(weapon);
     self givemaxammo(weapon);
-    self switchtoweapon(weapon);
+    if (doswitch)
+        self switchtoweapon(weapon);
+}
+
+// in the works
+g_claymore()
+{
+    self iprintln("not working rn :(");
+    //self thread maps/mp/zombies/_zm_weap_claymore::claymore_setup();
+    //self thread maps/mp/zombies/_zm_weap_claymore::show_claymore_hint( "claymore_purchased" );
 }
 
 doperks(perk)
@@ -2875,8 +2885,7 @@ originpack()
     self g_weapon("dsr50_zm");
     self giveweapon("sticky_grenade_zm");
     self givemaxammo("sticky_grenade_zm");
-    self giveweapon("claymore_zm");
-    self givemaxammo("claymore_zm");
+    self g_claymore();
     self giveweapon("knife_zm");
 }
 
