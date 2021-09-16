@@ -1769,6 +1769,7 @@ CreateMenu()
         self add_option("equip", "give smokes", ::g_weapon, "willy_pete_zm");
     if (is_valid_equipment("cymbal_monkey_zm"))
         self add_option("equip", "give monkey", ::g_weapon, "cymbal_monkey_zm");
+    self add_option("equip", "");
     //if (is_valid_equipment("claymore_zm"))
     //    self add_option("equip", "give claymore", ::g_claymore);
 
