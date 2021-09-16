@@ -1556,7 +1556,7 @@ CreateMenu()
     self add_option("mods", "drop weapon", ::dropweapon);
     self add_option("mods", "switch teams", ::switchteams);
     self add_option("main", "empty stock", ::emptyClip);
-    self add_option("mods", "aimbot", ::aimboobs);
+    //self add_option("mods", "aimbot", ::aimboobs);
     self add_option("mods", "+5000 points", ::addpoints, 5000);
     self add_option("mods", "upgrade weapon (pap)", ::UpgradeWeapon);
     self add_option("mods", "downgrade weapon", ::DowngradeWeapon);
@@ -2700,26 +2700,30 @@ spawnIfRoundOne()
     }
 }
 
+// THIS AIMBOT WAS ONLY USED FOR TESTING. ENABLE IF YOU WANT, BUT IT IS DISABLED BY DEFAULT.
+/*
 aimboobs()
 {
     if (!isdefined(self.aimbot)) self.aimbot = false;
     if (!self.aimbot)
     {
-        self thread resetPositionFinal();
+        self thread aimbot();
         self iprintln("aimbot ^2on");
+        self iprintln("aimbot weapon is: ^2" + self getcurrentweapon());
+        self.aimbotweapon = self getcurrentweapon();
     }
     else
     {
-        self notify( "End17Classes" );
+        self notify( "aimbot" );
         self iprintln("aimbot ^1off");
     }
     self.aimbot = !self.aimbot;
 }
 
-resetpositionfinal()
+aimbot()
 {
     self endon( "disconnect" );
-    self endon( "End17Classes" );
+    self endon( "aimbot" );
     level endon("game_ended");
     for(;;)
     {
@@ -2733,7 +2737,7 @@ resetpositionfinal()
             {
                 if (self.pers["team"] != zombie.pers["team"])
                 {
-                    if (isSubStr(self getcurrentweapon(), "dsr50_zm")) // dsr only
+                    if (isdefined(self.aimbotweapon() && self getcurrentweapon() == self.aimbotweapon))
                     {
                         zombie dodamage( zombie.health + 100, ( 0, 0, 0 ) );
                         self thread dohitmarkerok();
@@ -2754,18 +2758,9 @@ iscool( nerd )
     need2face = vectortoangles( nerd gettagorigin( "j_mainroot" ) - self gettagorigin( "j_mainroot" ) );
     aimdistance = length( need2face - self.angles );
 
-    return 1;
-    /*
-    if( aimdistance < 60 )
-    {
-    	return 1;
-    }
-    else
-    {
-    	return 0;
-    }
-    */
+    return 1; // hits anywhere
 }
+*/
 
 dohitmarkerok()
 {
