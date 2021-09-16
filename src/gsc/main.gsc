@@ -33,25 +33,8 @@
 
 init()
 {
-    precachestring(&"PLATFORM_PRESS_TO_SKIP");
-    precachestring(&"PLATFORM_PRESS_TO_RESPAWN");
-    precacheshader("white");
-    precacheshader("zombies_rank_5");
-    precacheshader("emblem_bg_default");
-    precacheshader("damage_feedback");
-    precacheshader( "hud_status_dead" );
-    precacheshader("specialty_instakill_zombies");
-
-    precacheitem( "zombie_knuckle_crack" );
-    precacheitem( "zombie_perk_bottle_jugg" );
-    precacheitem( "chalk_draw_zm" );
-
-    setdvar("bot_AllowMovement", 0);
-    setdvar("bot_PressAttackBtn", 0);
-    setdvar("bot_PressMeleeBtn", 0);
-    setdvar("friendlyfire_enabled", 0);
-    setdvar("g_friendlyfireDist", 0);
-    setdvar("ui_friendlyfire", 1);
+    init_precache();
+    init_dvars();
 
     // variables
     level.no_end_game_check = false;

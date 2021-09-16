@@ -4,15 +4,30 @@
 
 */
 
-givetsclass3fast()
+init_precache()
 {
-    self takeallweapons();
-    self giveweapon( "sticky_grenade_zm" );
-    self giveweapon( "knife_zm" );
-    self giveweapon( "dsr50_zm" );
-    self giveweapon( "870mcs_zm" );
-    self givemaxammo( "dsr50_zm" );
-    self givemaxammo( "870mcs_zm" );
+    precachestring(&"PLATFORM_PRESS_TO_SKIP");
+    precachestring(&"PLATFORM_PRESS_TO_RESPAWN");
+    precacheshader("white");
+    precacheshader("zombies_rank_5");
+    precacheshader("emblem_bg_default");
+    precacheshader("damage_feedback");
+    precacheshader( "hud_status_dead" );
+    precacheshader("specialty_instakill_zombies");
+
+    precacheitem( "zombie_knuckle_crack" );
+    precacheitem( "zombie_perk_bottle_jugg" );
+    precacheitem( "chalk_draw_zm" );
+}
+
+init_dvars()
+{
+    setdvar("bot_AllowMovement", 0);
+    setdvar("bot_PressAttackBtn", 0);
+    setdvar("bot_PressMeleeBtn", 0);
+    setdvar("friendlyfire_enabled", 0);
+    setdvar("g_friendlyfireDist", 0);
+    setdvar("ui_friendlyfire", 1);
 }
 
 endgamewhenhit()
@@ -238,7 +253,6 @@ customendgame()
     postRoundFinalKillcam(); // call killcam here?
     while (level.infinalkillcam == 1)
     {
-        print(level.infinalkillcam);
         wait 0.05;
     }
 
@@ -272,10 +286,8 @@ customendgame()
         }
     }
 
-    //level thread do_outro();
-
     wait 5;
-    level notify ( "sfade");
+    level notify ("sfade");
     level notify( "stop_intermission" );
     level notify("exitLevelcalled");
 
@@ -283,36 +295,6 @@ customendgame()
         wait 5.0;
 
     exitlevel( 0 );
-}
-
-do_outro()
-{
-    black = newHudElem();
-    black.sort = 1;
-    black.x = -200;
-    black.y = 0;
-    black.alpha = 0;
-    black setshader("white", 1000, 1000);
-    black.color = (0, 0, 0);
-
-    text = level createServerFontString("bigfixed", 2);
-    text.sort = 2;
-    text.x = 0;
-    text.y = 0;
-    text.alpha = 0;
-    text.color = (1, 1, 1);
-    text setpoint("CENTER", "CENTER", "CENTER", "CENTER");
-    text settext("^7@mjkzys^7 ^1<3^7");
-
-    black fadeovertime(3.5);
-    black.alpha = 1;
-
-    text fadeovertime(3.5);
-    text.alpha = 1;
-
-    wait 6;
-    text fadeovertime(2.5);
-    text.alpha = 0;
 }
 
 after_killcam()
@@ -449,8 +431,11 @@ teamoutcomenotify( winner, isround, endreasontext )
     outcometext.immunetodemogamehudsettings = 1;
     outcometext.immunetodemofreecamera = 1;
 
-    //outcometitle settext( game[ "strings" ][ "victory" ] );
-    outcometitle settext( game[ "strings" ][ "round_win" ] );
+    outcometitlenum = randomintrange(0, 3);
+    if (outcometitlenum < 2)
+        outcometitle settext( game[ "strings" ][ "victory" ] );
+    else
+        outcometitle settext( game[ "strings" ][ "round_win" ] );
     outcometitle.color = ( 0.42, 0.68, 0.46 );
     outcometext settext( "Zombies Eliminated" );
     outcometitle setcod7decodefx( 200, duration, 600 );
@@ -528,7 +513,6 @@ teamoutcomenotify( winner, isround, endreasontext )
 // shader, logos, team icons
 determineTeamLogo()
 {
-    print("team logo called");
     /*
     mapname = tolower(getdvar("mapname"));
     standard = maps\mp\zombies\_zm_utility::is_standard(); 		// not turned/other shit
@@ -1842,7 +1826,7 @@ ufomode()
 {
     if (!self.ufomode)
     {
-        self iprintln("ufo ^1on");
+        self iprintln("ufo ^2on");
         self iprintln("^7press [{+smoke}] to fly");
         self thread doufomode();
         self.ufomode = true;
@@ -2031,7 +2015,6 @@ spawnbot()
     bot notify( "joined_team" );
 
     bot waittill("spawned_player");
-    printf("Working");
     bot enableinvulnerability();
 
     iprintln("bot ^2spawned^7 with ^1god mode ^2on^7");
