@@ -120,20 +120,26 @@ onPlayerSpawned()
     self.defaultTeam = self.team;
     self.ufospeed = 20;
 
+    self.killcam_rank = "zombies_rank_5"; // max rank by default
+
     init_afterhit();
 
     for(;;)
     {
         self waittill("spawned_player");
 
-        self setperk("specialty_fallheight");
-        self setperk("specialty_unlimitedsprint");
-
         if (isdefined(level.intermission) && level.intermission)
         {
-            self enableInvulnerability();
-            self freezecontrols(true);
+            if (isalive(self))
+            {
+                self enableInvulnerability();
+                self freezecontrols(true);
+            }
+            continue;
         }
+
+        self setperk("specialty_fallheight");
+        self setperk("specialty_unlimitedsprint");
 
         if (self.status == "Host" || self.status == "Co-Host" || self.status == "Admin" || self.status == "VIP" || self.status == "Verified")
         {
