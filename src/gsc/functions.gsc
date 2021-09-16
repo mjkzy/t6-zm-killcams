@@ -9,6 +9,10 @@ init_precache()
     precachestring(&"PLATFORM_PRESS_TO_SKIP");
     precachestring(&"PLATFORM_PRESS_TO_RESPAWN");
     precacheshader("white");
+    precacheshader("zombies_rank_1");
+    precacheshader("zombies_rank_2");
+    precacheshader("zombies_rank_3");
+    precacheshader("zombies_rank_4");
     precacheshader("zombies_rank_5");
     precacheshader("emblem_bg_default");
     precacheshader("damage_feedback");
@@ -513,7 +517,6 @@ teamoutcomenotify( winner, isround, endreasontext )
 // shader, logos, team icons
 determineTeamLogo()
 {
-    /*
     mapname = tolower(getdvar("mapname"));
     standard = maps\mp\zombies\_zm_utility::is_standard(); 		// not turned/other shit
     survival = (getDvar("ui_zm_gamemodegroup") == "zsurvival"); // survival (Nuketown, TranZit solos)
@@ -521,17 +524,21 @@ determineTeamLogo()
 
     if (survival)
     {
-    	if (level.should_use_cia)
-    		return game["icons"]["axis"];
-    	else
-    		return game["icons"]["allies"];
+        if (isdefined(level.should_use_cia) && level.should_use_cia)
+            return game["icons"]["axis"];
+        else
+            return game["icons"]["allies"];
     }
-    else if (classic) {
-    	return "zombies_rank_5";
+    else if (classic)
+    {
+        rank = "zombies_rank_" + randomintrange(0, 5);
+        print(rank);
+        return rank;
     }
 
-    if (standard) return "hud_status_dead";
-    */
+    if (standard)
+        return "hud_status_dead";
+
     return "hud_status_dead";
 }
 
