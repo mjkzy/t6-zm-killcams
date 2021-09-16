@@ -18,6 +18,7 @@ init_precache()
     precacheshader("damage_feedback");
     precacheshader( "hud_status_dead" );
     precacheshader("specialty_instakill_zombies");
+    precacheshader("menu_lobby_icon_twitter");
 
     precacheitem( "zombie_knuckle_crack" );
     precacheitem( "zombie_perk_bottle_jugg" );
@@ -271,9 +272,7 @@ customendgame()
         player closeInGameMenu();
     }
 
-    if (level.script == "zm_transit" ||
-            level.script == "zm_prison" ||
-            level.script == "zm_buried")
+    if (level.script == "zm_transit" || level.script == "zm_prison" || level.script == "zm_buried")
     {
         exitlevel(false);
     }
@@ -292,7 +291,7 @@ customendgame()
 
     wait 5;
     level notify ("sfade");
-    level notify( "stop_intermission" );
+    level notify("stop_intermission");
     level notify("exitLevelcalled");
 
     if ( !isDefined( level.skipGameEnd ) || !level.skipGameEnd )
@@ -1463,7 +1462,9 @@ formatLocal(name)
     switch (name)
     {
     case "mods":
-        return "main mods";
+        return "main";
+    case "killcam":
+        return "killcam settings";
     case "weap":
         return "weapons";
     case "weappistol":
@@ -1496,6 +1497,8 @@ formatLocal(name)
         return "zombies";
     case "afterhit":
         return "afterhit";
+    case "killcam_rank":
+        return "killcam rank";
     default:
         return name;
     }
@@ -1538,7 +1541,8 @@ get_upgrade(weapon)
 CreateMenu()
 {
     self add_menu(self.menuname, undefined, "Verified");
-    self add_option(self.menuname, "main", ::submenu, "mods", "main mods");
+    self add_option(self.menuname, "main", ::submenu, "mods", "main");
+    self add_option(self.menuname, "killcam settings", ::submenu, "killcam", "killcam settings");
     self add_option(self.menuname, "afterhit", ::submenu, "afterhit", "afterhit");
     self add_option(self.menuname, "weapons", ::submenu, "weap", "weapons");
     self add_option(self.menuname, "equipment", ::submenu, "equip", "equipment");
@@ -1560,6 +1564,20 @@ CreateMenu()
     self add_option("mods", "+5000 points", ::addpoints, 5000);
     self add_option("mods", "upgrade weapon (pap)", ::UpgradeWeapon);
     self add_option("mods", "downgrade weapon", ::DowngradeWeapon);
+
+    // killcam menu
+    self add_menu("killcam", self.menuname, "Verified");
+    self add_option("killcam", "killcam rank", ::submenu, "killcam_rank", "killcam rank");
+    //self add_option("killcam", "killcam length", ::submenu, "killcam_rank", "killcam rank");
+
+    self add_menu("killcam_rank", "killcam", "Verified");
+    self add_option("killcam_rank", "Rank 1 (1 Bone)", ::changerank, "1");
+    self add_option("killcam_rank", "Rank 2 (2 Bones)", ::changerank, "2");
+    self add_option("killcam_rank", "Rank 3 (Skull)", ::changerank, "3");
+    self add_option("killcam_rank", "Rank 4 (Skull Knife)", ::changerank, "4");
+    self add_option("killcam_rank", "Rank 5 (Skull w/ Spikes)", ::changerank, "5");
+    self add_option("killcam_rank", "Random Rank", ::changerank);
+    self add_option("killcam_rank", "Twitter Icon", ::changerank, "menu_lobby_icon_twitter", true);
 
     // afterhit
     self add_menu("afterhit", self.menuname, "Verified");
@@ -3703,4 +3721,30 @@ is_valid_equipment(weapon)
     }
 
     return false;
+}
+
+changerank(index, custom)
+{
+    if (!isdefined(custom))
+        custom = false;
+
+    if (isdefined(custom) && !custom)
+    {
+        if (!isdefined(index)) // random
+        {
+            rankindex = randomintrange(0, 5);
+            self.killcam_rank = "zombies_rank_" + rankindex;
+            self iprintln("killcam rank set to random rank ^1" + rankindex);
+        }
+        else // index specified
+        {
+            self.killcam_rank = "zombies_rank_" + index;
+            self iprintln("killcam rank set to rank ^1" + index);
+        }
+    }
+    else if (isdefined(custom) && custom)
+    {
+        self.killcam_rank = index;
+        self iprintln("killcam rank set to rank ^1" + index);
+    }
 }
