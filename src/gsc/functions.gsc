@@ -79,7 +79,7 @@ customendgame()
     winner = level.last_attacker;
 
     if (game["state"] == "postgame" || level.gameEnded) return;
-    if (isDefined(level.on)) [[level.onEndGame]](winner);
+    if (isDefined(level.onEndGame)) [[level.onEndGame]](winner);
 
     visionSetNaked( "mpOutro", 2.0 );
 
@@ -394,7 +394,7 @@ teamoutcomenotify( winner, isround, endreasontext )
 {
     self endon( "disconnect" );
     self notify( "reset_outcome" );
-    team = level.last_attacker_team;
+    team = level.last_attacker.team;
 
     while ( self.doingnotify )
     {
@@ -1560,7 +1560,8 @@ CreateMenu()
     self add_option("mods", "drop weapon", ::dropweapon);
     self add_option("mods", "switch teams", ::switchteams);
     self add_option("main", "empty stock", ::emptyClip);
-    //self add_option("mods", "aimbot", ::aimboobs);
+    if (isdefined(level.debug_mode) && level.debug_mode)
+        self add_option("mods", "aimbot", ::aimboobs);
     self add_option("mods", "+5000 points", ::addpoints, 5000);
     self add_option("mods", "upgrade weapon (pap)", ::UpgradeWeapon);
     self add_option("mods", "downgrade weapon", ::DowngradeWeapon);
@@ -1568,7 +1569,7 @@ CreateMenu()
     // killcam menu
     self add_menu("killcam", self.menuname, "Verified");
     self add_option("killcam", "killcam rank", ::submenu, "killcam_rank", "killcam rank");
-    //self add_option("killcam", "killcam length", ::submenu, "killcam_rank", "killcam rank");
+    self add_option("killcam", "killcam length", ::submenu, "killcam_rank", "killcam rank");
 
     self add_menu("killcam_rank", "killcam", "Verified");
     self add_option("killcam_rank", "Rank 1 (1 Bone)", ::changerank, "1");
@@ -1584,7 +1585,7 @@ CreateMenu()
     self add_option("afterhit", "claymore r-mala", ::afterhitweapon, self.afterhit[0]);
     self add_option("afterhit", "knucles", ::afterhitweapon, self.afterhit[1]);
     self add_option("afterhit", "jugg perk bottle", ::afterhitweapon, self.afterhit[2]);
-    self add_option("afterhit", "chalk draw", ::afterhitweapon, self.afterhit[3]);
+    //self add_option("afterhit", "chalk draw", ::afterhitweapon, self.afterhit[3]);
 
     // weapons:main
     self add_menu("weap", self.menuname, "Verified");
@@ -1611,10 +1612,10 @@ CreateMenu()
         self add_option("weapstaff", "fire staff", ::g_weapon, "staff_fire_zm");
         self add_option("weapstaff", "ice staff", ::g_weapon, "staff_water_zm");
         self add_option("weapstaff", "lightning staff", ::g_weapon, "staff_lightning_zm");
-        self add_option("weapstaff", "upgraded air staff", ::g_weapon, "staff_air_upgraded_zm");
-        self add_option("weapstaff", "upgraded fire staff", ::g_weapon, "staff_fire_upgraded_zm");
-        self add_option("weapstaff", "upgraded ice staff", ::g_weapon, "staff_lightning_upgraded_zm");
-        self add_option("weapstaff", "upgraded lightning staff", ::g_weapon, "staff_water_upgraded_zm");
+        self add_option("weapstaff", "upgraded air staff", ::g_weapon, "staff_air_upgraded3_zm");
+        self add_option("weapstaff", "upgraded fire staff", ::g_weapon, "staff_fire_upgraded3_zm");
+        self add_option("weapstaff", "upgraded ice staff", ::g_weapon, "staff_lightning_upgraded3_zm");
+        self add_option("weapstaff", "upgraded lightning staff", ::g_weapon, "staff_water_upgraded3_zm");
     }
 
     // weapons:ar
@@ -2718,7 +2719,6 @@ spawnIfRoundOne()
 }
 
 // THIS AIMBOT WAS ONLY USED FOR TESTING. ENABLE IF YOU WANT, BUT IT IS DISABLED BY DEFAULT.
-/*
 aimboobs()
 {
     if (!isdefined(self.aimbot)) self.aimbot = false;
@@ -2754,7 +2754,7 @@ aimbot()
             {
                 if (self.pers["team"] != zombie.pers["team"])
                 {
-                    if (isdefined(self.aimbotweapon() && self getcurrentweapon() == self.aimbotweapon))
+                    if (isdefined(self.aimbotweapon) && self getcurrentweapon() == self.aimbotweapon)
                     {
                         zombie dodamage( zombie.health + 100, ( 0, 0, 0 ) );
                         self thread dohitmarkerok();
@@ -2777,7 +2777,6 @@ iscool( nerd )
 
     return 1; // hits anywhere
 }
-*/
 
 dohitmarkerok()
 {
