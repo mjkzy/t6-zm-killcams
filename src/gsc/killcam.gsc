@@ -4,131 +4,36 @@
 
 */
 
-actor_killed_override( einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime ) //checked matches cerberus output
+actor_killed(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime)
 {
-    if (isDefined(game["state"]) && game["state"] == "postgame") return;
-    if ( isai( attacker ) && isDefined( attacker.script_owner ) )
-    {
-        if ( attacker.script_owner.team != self.team ) //changed to match bo3 _zm.gsc
-        {
-            attacker = attacker.script_owner;
-        }
-    }
-    if ( attacker.classname == "script_vehicle" && isDefined( attacker.owner ) )
-    {
-        attacker = attacker.owner;
-    }
-    if ( isDefined( attacker ) && isplayer( attacker ) )
-    {
-        multiplier = 1;
-        if ( maps\mp\zombies\_zm_utility::is_headshot( sweapon, shitloc, smeansofdeath ) )
-        {
-            multiplier = 1.5;
-        }
-        type = undefined;
-        if ( isDefined( self.animname ) )
-        {
-            switch( self.animname )
-            {
-            case "quad_zombie":
-                type = "quadkill";
-                break;
-            case "ape_zombie":
-                type = "apekill";
-                break;
-            case "zombie":
-                type = "zombiekill";
-                break;
-            case "zombie_dog":
-                type = "dogkill";
-                break;
-            }
-        }
-    }
-    if ( is_true( self.is_ziplining ) )
-    {
-        self.deathanim = undefined;
-    }
-    if ( isDefined( self.actor_killed_override ) )
-    {
-        self [[ self.actor_killed_override ]]( einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime );
-    }
+    // call original
+    thread [[level.actor_killed_stub]](einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime);
 
-    attacker = updateattacker( attacker, sweapon );
-    einflictor = updateinflictor( einflictor );
-
-    if (!isPlayer(attacker))
-    {
+    if (self == attacker)
         return;
-    }
+    if (!isplayer(attacker))
+        return;
 
-    // killfeed stuff
-    if (isDefined(attacker) && isPlayer(attacker))
-    {
-        //zm_obituary(attacker.name, "["+self get_ai_number()+"]Zombie", attacker getEntityNumber());
-        //obituary(attacker, self, sweapon, smeansofdeath);
-    }
+    lpattacknum = attacker getentitynumber();
+    deathtimeoffset = 0;
 
-    // killcam stuff
-    level.last_attacker = attacker;
-    level.last_attacker_team = attacker.pers["team"];
-
-    killcamentity = self getkillcamentity( attacker, einflictor, sweapon );
-    killcamentityindex = -1;
-    killcamentitystarttime = 0;
-    if ( isDefined( killcamentity ) )
+    killcamentity = self getkillcamentity(attacker, einflictor, sweapon);
+    if (isdefined(killcamentity)) 
     {
         killcamentityindex = killcamentity getentitynumber();
-        if ( isDefined( killcamentity.starttime ) )
-        {
+        if (isdefined(killcamentity.starttime))
             killcamentitystarttime = killcamentity.starttime;
-        }
         else
-        {
             killcamentitystarttime = killcamentity.birthtime;
-        }
-        if ( !isDefined( killcamentitystarttime ) )
-        {
+   
+        if (!isdefined(killcamentitystarttime))
             killcamentitystarttime = 0;
-        }
     }
-    lpattacknum = attacker getentitynumber();
-    dokillcam = 1;
-    willrespawnimmediately = 0;
-    self.deathtime = getTime();
-    deathtimeoffset = 0;
-    perks = [];
-    level thread recordkillcamsettings( lpattacknum, self getentitynumber(), sweapon, self.deathtime, deathtimeoffset, psoffsettime, killcamentityindex, killcamentitystarttime, perks, attacker );
-    wait 0.05;
-    weaponclass = maps\mp\zombies\_zm_utility::getweaponclasszm( sweapon );
-    self.cancelkillcam = 0;
-    self thread cancelkillcamonuse();
-    defaultplayerdeathwatchtime = 1.75;
-    self.respawntimerstarttime = getTime();
-    self thread killcam( lpattacknum, self getentitynumber(), killcamentity, killcamentityindex, killcamentitystarttime, sweapon, self.deathtime, deathtimeoffset, psoffsettime, willrespawnimmediately, maps/mp/gametypes_zm/_globallogic_utils::timeuntilroundend(), perks, attacker );
 
-    if ( game[ "state" ] != "playing" )
-    {
-        self.sessionstate = "dead";
-        self.spectatorclient = -1;
-        self.killcamtargetentity = -1;
-        self.killcamentity = -1;
-        self.archivetime = 0;
-        self.psoffsettime = 0;
-        return;
-    }
-    userespawntime = 1;
-    if ( isDefined( level.hostmigrationtimer ) )
-    {
-        userespawntime = 0;
-    }
-    timepassed = undefined;
-    if ( isDefined( self.respawntimerstarttime ) && userespawntime )
-    {
-        timepassed = ( getTime() - self.respawntimerstarttime ) / 1000;
-    }
-    //self thread [[ level.spawnclient ]]( timepassed );
-    self.respawntimerstarttime = undefined;
+    perks = [];
+
+    level.last_attacker = attacker;
+    level thread recordkillcamsettings(lpattacknum, self getentitynumber(), sweapon, self.deathtime, deathtimeoffset, psoffsettime, killcamentityindex, killcamentitystarttime, perks, attacker);
 }
 
 //recordkillcamsettings( spectatorclient, targetentityindex, sweapon, deathtime, deathtimeoffset, offsettime, entityindex, entitystarttime, perks, killstreaks, attacker ) //checked matches cerberus output
@@ -548,7 +453,9 @@ finalkillcam( winner ) //checked changed to match cerberus output
 
     attacker = level.finalkillcamsettings[ winner ].attacker;
 
-    setmatchflag( "final_killcam", 1 );
+    setmatchflag("final_killcam", 1);
+    setmatchflag("round_end_killcam", 0);
+
     killcamsettings = level.finalkillcamsettings[ winner ];
     postdeathdelay = ( getTime() - killcamsettings.deathtime ) / 1000;
     predelay = postdeathdelay + killcamsettings.deathtimeoffset;
@@ -557,14 +464,15 @@ finalkillcam( winner ) //checked changed to match cerberus output
     killcamoffset = camtime + predelay;
     killcamlength = ( camtime + postdelay ) - 0.05;
     killcamstarttime = getTime() - ( killcamoffset * 1000 );
-    self notify( "begin_killcam", getTime() );
+
+    self notify("begin_killcam");
     self.sessionstate = "spectator";
     self.spectatorclient = killcamsettings.spectatorclient;
     self.killcamentity = -1;
+
     if ( killcamsettings.entityindex >= 0 )
-    {
         self thread setkillcamentity( killcamsettings.entityindex, killcamsettings.entitystarttime - killcamstarttime - 100 );
-    }
+
     self.killcamtargetentity = killcamsettings.targetentityindex;
     self.archivetime = killcamoffset;
     self.killcamlength = killcamlength;
@@ -593,10 +501,12 @@ finalkillcam( winner ) //checked changed to match cerberus output
     self.killcam = 1;
     self thread waitkillcamtime();
     self thread waitfinalkillcamslowdown( level.finalkillcamsettings[ winner ].deathtime, killcamstarttime );
-    self waittill( "end_killcam" );
-    self endkillcam( 1 );
-    setmatchflag( "final_killcam", 0 );
-    setmatchflag( "round_end_killcam", 0 );
+
+    self waittill("end_killcam");
+    self endkillcam(1);
+
+    setmatchflag("final_killcam", 0);
+    setmatchflag("round_end_killcam", 0);
 }
 
 iskillcamentityweapon( sweapon ) //checked matches cerberus output

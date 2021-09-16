@@ -46,7 +46,8 @@ init()
     level.player_too_many_weapons_monitor = false;
 
     level.callbackactorkilledstub = level.callbackactorkilled;
-    level.callbackactorkilled = ::actor_killed_override;
+    level.actor_killed_stub = level.callbackactorkilled;
+    level.callbackactorkilled = ::actor_killed;
     level._zombies_round_spawn_failsafe = undefined;
     level.onTeamOutcomeNotify = ::teamOutcomeNotify;
     level.callbackplayerdamage = ::callback_playerdamage;
@@ -68,20 +69,24 @@ init()
     level thread doFinalKillcam();
     level thread drawZombiesCounter();
     level thread monitorlastcooldown();
+
     level thread set_pap_price();
+    level thread set_claymore_price();
 
     level thread buildbuildables();
     level thread buildcraftables();
 
     initfinalkillcam();
 
+    level.debug_mode = getdvarintdefault("debug_mode", 0);
+
     level.result = 0;
 }
 
 set_pap_price()
 {
-    precachestring( &"ZOMBIE_PERK_PACKAPUNCH" );
-    precachestring( &"ZOMBIE_PERK_PACKAPUNCH_ATT" );
+    precachestring(&"ZOMBIE_PERK_PACKAPUNCH");
+    precachestring(&"ZOMBIE_PERK_PACKAPUNCH_ATT");
 
     level waittill( "Pack_A_Punch_on" );
 
@@ -90,6 +95,27 @@ set_pap_price()
     pap_trigger.cost = 0;
     pap_trigger.attachment_cost = 0;
     pap_trigger sethintstring( &"ZOMBIE_PERK_PACKAPUNCH", pap_trigger.cost ); // reset hint msg to new price
+}
+
+set_claymore_price()
+{
+    wait 1;
+    trigs = getentarray("claymore_purchase", "targetname");
+    for(i=0; i<trigs.size; i++)
+    {
+        model = getent(trigs[i].target, "targetname");
+        if (isdefined(model))
+            model hide();
+    }
+    array_thread(trigs, ::override_price);
+}
+
+override_price()
+{
+    precachestring(&"ZOMBIE_CLAYMORE_PURCHASE");
+    self.zombie_cost = 0;
+    self sethintstring( &"ZOMBIE_CLAYMORE_PURCHASE" );
+	self setcursorhint( "HINT_WEAPON", "claymore_zm" );
 }
 
 onPlayerConnect()
@@ -220,9 +246,11 @@ init_afterhit()
     self.afterhit[2].weap = perks[perkindex];
     self.afterhit[2].on = false;
 
+    /*
     self.afterhit[3] = SpawnStruct();
     self.afterhit[3].weap = "chalk_draw_zm";
     self.afterhit[3].on = false;
+    */
 }
 
 canToggleAfter()
