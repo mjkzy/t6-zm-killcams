@@ -1770,10 +1770,16 @@ CreateMenu()
 
     // equipment
     self add_menu("equip", self.menuname, "Verified");
-    self add_option("equip", "give semtex", ::g_weapon, "sticky_grenade_zm", false);
-    self add_option("equip", "give emp", ::g_weapon, "emp_grenade_zm", false);
-    self add_option("equip", "give smokes", ::g_weapon, "willy_pete_zm", false);
-    self add_option("equip", "give claymore", ::g_claymore);
+    if (is_valid_equipment("sticky_grenade_zm"))
+        self add_option("equip", "give semtex", ::g_weapon, "sticky_grenade_zm");
+    if (is_valid_equipment("emp_grenade_zm") && isdefined(level.zombie_weapons["emp_grenade_zm"]))
+        self add_option("equip", "give emp", ::g_weapon, "emp_grenade_zm");
+    if (is_valid_equipment("willy_pete_zm"))
+        self add_option("equip", "give smokes", ::g_weapon, "willy_pete_zm");
+    if (is_valid_equipment("cymbal_monkey_zm"))
+        self add_option("equip", "give monkey", ::g_weapon, "cymbal_monkey_zm");
+    //if (is_valid_equipment("claymore_zm"))
+    //    self add_option("equip", "give claymore", ::g_claymore);
 
     // perks
     self add_menu("perk", self.menuname, "Verified");
@@ -1938,17 +1944,13 @@ switchteams()
     self iprintln("switched to " + self.team + " ^7team " + isdefault);
 }
 
-g_weapon(weapon, doswitch)
+g_weapon(weapon)
 {
-    if (!isdefined(doswitch))
-        doswitch = true;
-
-    self giveweapon(weapon);
-    self givemaxammo(weapon);
-    if (doswitch)
-        self switchtoweapon(weapon);
+    // just found this weapon wrapper lol
+    self maps/mp/zombies/_zm_weapons::weapon_give(weapon);
 }
 
+/*
 // in the works
 g_claymore()
 {
@@ -1956,6 +1958,7 @@ g_claymore()
     //self thread maps/mp/zombies/_zm_weap_claymore::claymore_setup();
     //self thread maps/mp/zombies/_zm_weap_claymore::show_claymore_hint( "claymore_purchased" );
 }
+*/
 
 doperks(perk)
 {
@@ -2885,7 +2888,7 @@ originpack()
     self g_weapon("dsr50_zm");
     self giveweapon("sticky_grenade_zm");
     self givemaxammo("sticky_grenade_zm");
-    self g_claymore();
+    //self g_claymore();
     self giveweapon("knife_zm");
 }
 
@@ -3701,4 +3704,27 @@ spawn_on_join()
         self [[level.spawnplayer]]();
         thread maps\mp\zombies\_zm::refresh_player_navcard_hud();
     }
+}
+
+// checks lethal, tactical, and placeable (like claymore)
+is_valid_equipment(weapon)
+{
+    if (!isdefined(weapon))
+    {
+        return false;
+    }
+    if (isdefined(level.zombie_lethal_grenade_list[weapon]))
+    {
+        return true;
+    }
+    if (isdefined(level.zombie_tactical_grenade_list[weapon]))
+    {
+        return true;
+    }
+    if (isdefined(level.zombie_placeable_mine_list[weapon]))
+    {
+        return true;
+    }
+
+    return false;
 }
