@@ -2088,9 +2088,9 @@ tp_zombies()
     zombies = getaiarray( level.zombie_team );
     foreach (zombie in zombies)
     {
-        zombie setorigin(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
+        zombie forceteleport(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
     }
-    self iprintln("bots teleported to crosshair^7");
+    self iprintln("zombies ^1teleported ^7to crosshair^7");
 }
 
 customendgame_f()
