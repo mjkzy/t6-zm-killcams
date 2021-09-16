@@ -1763,15 +1763,13 @@ CreateMenu()
     self add_menu("equip", self.menuname, "Verified");
     if (is_valid_equipment("sticky_grenade_zm"))
         self add_option("equip", "give semtex", ::g_weapon, "sticky_grenade_zm");
-    if (is_valid_equipment("emp_grenade_zm") && isdefined(level.zombie_weapons["emp_grenade_zm"]))
+    if (is_valid_equipment("emp_grenade_zm"))
         self add_option("equip", "give emp", ::g_weapon, "emp_grenade_zm");
     if (is_valid_equipment("willy_pete_zm"))
         self add_option("equip", "give smokes", ::g_weapon, "willy_pete_zm");
     if (is_valid_equipment("cymbal_monkey_zm"))
         self add_option("equip", "give monkey", ::g_weapon, "cymbal_monkey_zm");
     self add_option("equip", "");
-    //if (is_valid_equipment("claymore_zm"))
-    //    self add_option("equip", "give claymore", ::g_claymore);
 
     // perks
     self add_menu("perk", self.menuname, "Verified");
@@ -3699,15 +3697,7 @@ is_valid_equipment(weapon)
     {
         return false;
     }
-    if (isdefined(level.zombie_lethal_grenade_list[weapon]))
-    {
-        return true;
-    }
-    if (isdefined(level.zombie_tactical_grenade_list[weapon]))
-    {
-        return true;
-    }
-    if (isdefined(level.zombie_placeable_mine_list[weapon]))
+    if (isdefined(level.zombie_weapons[weapon]))
     {
         return true;
     }
