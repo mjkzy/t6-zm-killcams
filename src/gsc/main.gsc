@@ -33,6 +33,8 @@
 
 init()
 {
+    setdvar("scr_killcam_time", 5);
+
     init_precache();
     init_dvars();
 
@@ -71,16 +73,15 @@ init()
     level thread monitorlastcooldown();
 
     level thread set_pap_price();
-    level thread set_claymore_price();
 
     level thread buildbuildables();
     level thread buildcraftables();
 
-    initfinalkillcam();
-
     level.debug_mode = getdvarintdefault("debug_mode", 0);
 
     level.result = 0;
+
+    initfinalkillcam();
 }
 
 set_pap_price()
@@ -95,27 +96,6 @@ set_pap_price()
     pap_trigger.cost = 0;
     pap_trigger.attachment_cost = 0;
     pap_trigger sethintstring( &"ZOMBIE_PERK_PACKAPUNCH", pap_trigger.cost ); // reset hint msg to new price
-}
-
-set_claymore_price()
-{
-    wait 1;
-    trigs = getentarray("claymore_purchase", "targetname");
-    for(i=0; i<trigs.size; i++)
-    {
-        model = getent(trigs[i].target, "targetname");
-        if (isdefined(model))
-            model hide();
-    }
-    array_thread(trigs, ::override_price);
-}
-
-override_price()
-{
-    precachestring(&"ZOMBIE_CLAYMORE_PURCHASE");
-    self.zombie_cost = 0;
-    self sethintstring( &"ZOMBIE_CLAYMORE_PURCHASE" );
-	self setcursorhint( "HINT_WEAPON", "claymore_zm" );
 }
 
 onPlayerConnect()

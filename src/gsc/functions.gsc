@@ -76,7 +76,7 @@ endgamewhenhit()
 // MP endgame + parts of end_game from _zm
 customendgame()
 {
-    winner = level.last_attacker;
+    winner = level.last_attacker.team;
 
     if (game["state"] == "postgame" || level.gameEnded) return;
     if (isDefined(level.onEndGame)) [[level.onEndGame]](winner);
@@ -124,7 +124,7 @@ customendgame()
         }
     }
 
-    if ( isdefined( winner ) && isdefined( level.teams[winner] ) )
+    if (isdefined(winner) && isdefined(level.teams[winner]))
     {
         level.finalKillCam_winner = winner;
     }
@@ -531,7 +531,6 @@ determineTeamLogo()
     else if (classic)
     {
         rank = "zombies_rank_" + randomintrange(0, 5);
-        print(rank);
         return rank;
     }
 
@@ -2651,26 +2650,24 @@ monitorLastCooldown()
     }
     wait 3;
 
-    first = true;
+    level.islast = false;
     for(;;)
     {
         enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
-        if (!level.islast)
+        if (isdefined(level.islast) && !level.islast)
         {
             if (enemies > 0 && enemies <= 2)
             {
                 foreach (player in level.players)
                 {
-                    if (isDefined(player.pers["isBot"]) && player.pers["isBot"])
-                    {
-                        continue;
-                    }
-                    else
+                    if (!isDefined(player.pers["isBot"]) && !player.pers["isBot"])
                     {
                         player thread runCooldownFunc();
                     }
                 }
-                zombies = getaiarray( level.zombie_team );
+
+                // try to fix zombies failsafe :/
+                zombies = getaiarray(level.zombie_team);
                 foreach (zombie in zombies)
                 {
                     zombie.ignore_round_spawn_failsafe = 1;
@@ -2678,14 +2675,8 @@ monitorLastCooldown()
                 level.islast = true;
             }
         }
-        if (enemies > 2 && level.islast)
+        if (enemies > 2 && isdefined(level.islast) && level.islast)
         {
-            if (first)
-            {
-                first = false;
-                continue;
-            }
-
             iprintln("last cooldown reset, there are more than 2 zombies.");
             level.islast = false;
         }

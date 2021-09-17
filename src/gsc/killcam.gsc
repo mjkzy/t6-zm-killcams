@@ -14,10 +14,15 @@ actor_killed(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitlo
     if (!isplayer(attacker))
         return;
 
-    lpattacknum = attacker getentitynumber();
-    deathtimeoffset = 0;
+    attacker = updateattacker( attacker, sweapon );
+    if (!isplayer(attacker))
+        return;
+
+    einflictor = updateinflictor( einflictor );
 
     killcamentity = self getkillcamentity(attacker, einflictor, sweapon);
+    killcamentityindex = -1;
+    killcamentitystarttime = 0;
     if (isdefined(killcamentity)) 
     {
         killcamentityindex = killcamentity getentitynumber();
@@ -30,10 +35,16 @@ actor_killed(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitlo
             killcamentitystarttime = 0;
     }
 
+    lpattacknum = attacker getentitynumber();
+    deathtimeoffset = 0;
+    self.deathtime = getTime();
+    willrespawnimmediately = 0;
+
     perks = [];
 
     level.last_attacker = attacker;
     level thread recordkillcamsettings(lpattacknum, self getentitynumber(), sweapon, self.deathtime, deathtimeoffset, psoffsettime, killcamentityindex, killcamentitystarttime, perks, attacker);
+    self thread killcam(lpattacknum, self getentitynumber(), killcamentity, killcamentityindex, killcamentitystarttime, sweapon, self.deathtime, deathtimeoffset, psoffsettime, willrespawnimmediately, maps/mp/gametypes_zm/_globallogic_utils::timeuntilroundend(), perks, attacker);
 }
 
 //recordkillcamsettings( spectatorclient, targetentityindex, sweapon, deathtime, deathtimeoffset, offsettime, entityindex, entitystarttime, perks, killstreaks, attacker ) //checked matches cerberus output
@@ -92,7 +103,6 @@ dofinalkillcam() //checked changed to match cerberus output
     {
         winner = level.finalkillcam_winner;
     }
-
     if ( !isDefined( level.finalkillcamsettings[ winner ].targetentityindex ) )
     {
         level.infinalkillcam = 0;
@@ -454,7 +464,6 @@ finalkillcam( winner ) //checked changed to match cerberus output
     attacker = level.finalkillcamsettings[ winner ].attacker;
 
     setmatchflag("final_killcam", 1);
-    setmatchflag("round_end_killcam", 0);
 
     killcamsettings = level.finalkillcamsettings[ winner ];
     postdeathdelay = ( getTime() - killcamsettings.deathtime ) / 1000;
@@ -465,7 +474,7 @@ finalkillcam( winner ) //checked changed to match cerberus output
     killcamlength = ( camtime + postdelay ) - 0.05;
     killcamstarttime = getTime() - ( killcamoffset * 1000 );
 
-    self notify("begin_killcam");
+    self notify("begin_killcam", getTime());
     self.sessionstate = "spectator";
     self.spectatorclient = killcamsettings.spectatorclient;
     self.killcamentity = -1;
@@ -542,7 +551,7 @@ iskillcamgrenadeweapon( sweapon ) //checked changed to match cerberus output
 calckillcamtime( sweapon, entitystarttime, predelay, respawn, maxtime ) //checked matches cerberus output dvars found in another dump
 {
     camtime = 0;
-    if ( getDvar( "scr_killcam_time" ) == "" )
+    if ( getDvar( "scr_killcam_time" ) == "" ) // default
     {
         if ( iskillcamentityweapon( sweapon ) )
         {
