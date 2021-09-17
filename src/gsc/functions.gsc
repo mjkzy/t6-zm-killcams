@@ -2362,6 +2362,9 @@ MenuInit()
         if (self actionSlotOneButtonPressed() && self adsButtonPressed() && !self.menu.open)
         {
             self openTheMenu();
+            self iPrintLn("[{+actionslot 1}] / [{+actionslot 2}] - Up/Down");
+            self iPrintLn("[{+gostand}] - Select");
+            self iPrintLn("[{+activate}] - Back");
             self setclientuivisibilityflag("hud_visible", 0);
         }
         if (self.menu.open)
