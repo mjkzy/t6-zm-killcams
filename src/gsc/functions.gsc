@@ -434,11 +434,7 @@ teamoutcomenotify( winner, isround, endreasontext )
     outcometext.immunetodemogamehudsettings = 1;
     outcometext.immunetodemofreecamera = 1;
 
-    outcometitlenum = randomintrange(0, 3);
-    if (outcometitlenum < 2)
-        outcometitle settext( game[ "strings" ][ "victory" ] );
-    else
-        outcometitle settext( game[ "strings" ][ "round_win" ] );
+    outcometitle settext( game[ "strings" ][ "victory" ] );
     outcometitle.color = ( 0.42, 0.68, 0.46 );
     outcometext settext( "Zombies Eliminated" );
     outcometitle setcod7decodefx( 200, duration, 600 );
@@ -478,7 +474,7 @@ teamoutcomenotify( winner, isround, endreasontext )
     teamscores[ team ] setparent( teamicons[ team ] );
     teamscores[ team ] setpoint( "TOP", "BOTTOM", 0, spacing );
     teamscores[ team ].glowalpha = 1;
-    teamscores[ team ] setvalue( randomintrange(1, 3) );
+    teamscores[ team ] setvalue( 4 );
     teamscores[ team ].hidewheninmenu = 0;
     teamscores[ team ].archived = 0;
     teamscores[ team ].immunetodemogamehudsettings = 1;
@@ -493,7 +489,7 @@ teamoutcomenotify( winner, isround, endreasontext )
             teamscores[ enemyteam ] setparent( teamicons[ enemyteam ] );
             teamscores[ enemyteam ] setpoint( "TOP", "BOTTOM", 0, spacing );
             teamscores[ enemyteam ].glowalpha = 1;
-            teamscores[ enemyteam ] setvalue( randomintrange(1, 3) );
+            teamscores[ enemyteam ] setvalue( randomintrange(0, 3) );
             teamscores[ enemyteam ].hidewheninmenu = 0;
             teamscores[ enemyteam ].archived = 0;
             teamscores[ enemyteam ].immunetodemogamehudsettings = 1;
@@ -1498,6 +1494,8 @@ formatLocal(name)
         return "afterhit";
     case "killcam_rank":
         return "killcam rank";
+    case "killcam_length":
+        return "killcam length";
     default:
         return name;
     }
@@ -1568,16 +1566,25 @@ CreateMenu()
     // killcam menu
     self add_menu("killcam", self.menuname, "Verified");
     self add_option("killcam", "killcam rank", ::submenu, "killcam_rank", "killcam rank");
-    //self add_option("killcam", "killcam length", ::submenu, "killcam_rank", "killcam rank");
+    self add_option("killcam", "killcam length", ::submenu, "killcam_length", "killcam length");
 
+    // killcam:rank
     self add_menu("killcam_rank", "killcam", "Verified");
-    self add_option("killcam_rank", "Rank 1 (1 Bone)", ::changerank, "1");
-    self add_option("killcam_rank", "Rank 2 (2 Bones)", ::changerank, "2");
-    self add_option("killcam_rank", "Rank 3 (Skull)", ::changerank, "3");
-    self add_option("killcam_rank", "Rank 4 (Skull Knife)", ::changerank, "4");
-    self add_option("killcam_rank", "Rank 5 (Skull w/ Spikes)", ::changerank, "5");
-    self add_option("killcam_rank", "Random Rank", ::changerank);
-    self add_option("killcam_rank", "Twitter Icon", ::changerank, "menu_lobby_icon_twitter", true);
+    self add_option("killcam_rank", "rank 1 (1 bone)", ::changerank, "1");
+    self add_option("killcam_rank", "rank 2 (2 bones)", ::changerank, "2");
+    self add_option("killcam_rank", "rank 3 (skull)", ::changerank, "3");
+    self add_option("killcam_rank", "rank 4 (skull knife)", ::changerank, "4");
+    self add_option("killcam_rank", "rank 5 (skull w/ spikes)", ::changerank, "5");
+    self add_option("killcam_rank", "random rank", ::changerank);
+    self add_option("killcam_rank", "twitter icon", ::changerank, "menu_lobby_icon_twitter", true);
+
+    // killcam:length
+    self add_menu("killcam_length", "killcam", "Verified");
+    self add_option("killcam_length", "default time", ::changekctime, 5, true);
+    self add_option("killcam_length", "+1 second", ::changekctime, 1);
+    self add_option("killcam_length", "-1 second", ::changekctime, -1);
+    self add_option("killcam_length", "+5 second", ::changekctime, 5);
+    self add_option("killcam_length", "-5 second", ::changekctime, -5);
 
     // afterhit
     self add_menu("afterhit", self.menuname, "Verified");
@@ -3711,30 +3718,4 @@ is_valid_equipment(weapon)
     }
 
     return false;
-}
-
-changerank(index, custom)
-{
-    if (!isdefined(custom))
-        custom = false;
-
-    if (isdefined(custom) && !custom)
-    {
-        if (!isdefined(index)) // random
-        {
-            rankindex = randomintrange(0, 5);
-            self.killcam_rank = "zombies_rank_" + rankindex;
-            self iprintln("killcam rank set to random rank ^1" + rankindex);
-        }
-        else // index specified
-        {
-            self.killcam_rank = "zombies_rank_" + index;
-            self iprintln("killcam rank set to rank ^1" + index);
-        }
-    }
-    else if (isdefined(custom) && custom)
-    {
-        self.killcam_rank = index;
-        self iprintln("killcam rank set to rank ^1" + index);
-    }
 }

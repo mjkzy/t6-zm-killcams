@@ -23,14 +23,14 @@ actor_killed(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitlo
     killcamentity = self getkillcamentity(attacker, einflictor, sweapon);
     killcamentityindex = -1;
     killcamentitystarttime = 0;
-    if (isdefined(killcamentity)) 
+    if (isdefined(killcamentity))
     {
         killcamentityindex = killcamentity getentitynumber();
         if (isdefined(killcamentity.starttime))
             killcamentitystarttime = killcamentity.starttime;
         else
             killcamentitystarttime = killcamentity.birthtime;
-   
+
         if (!isdefined(killcamentitystarttime))
             killcamentitystarttime = 0;
     }
@@ -667,18 +667,54 @@ overlay(on, attacker, final)
 
 checkKillcamType(final)
 {
-    pick = randomintrange(1, 4);
-    if (pick == 4)
-        pick = 3;
+    return "FINAL KILLCAM";
+    //return "FINAL KILLCAM";
+    //return "ROUND ENDING KILLCAM";
+}
 
-    if (pick == 1)
+changerank(index, custom)
+{
+    if (!isdefined(custom))
+        custom = false;
+
+    if (isdefined(custom) && !custom)
     {
-        return "ROUND ENDING KILLCAM";
+        if (!isdefined(index)) // random
+        {
+            rankindex = randomintrange(0, 5);
+            self.killcam_rank = "zombies_rank_" + rankindex;
+            self iprintln("killcam rank set to random rank ^1" + rankindex);
+        }
+        else // index specified
+        {
+            self.killcam_rank = "zombies_rank_" + index;
+            self iprintln("killcam rank set to rank ^1" + index);
+        }
     }
-    else
+    else if (isdefined(custom) && custom)
     {
-        return "FINAL KILLCAM";
+        self.killcam_rank = index;
+        self iprintln("killcam rank set to rank ^1" + index);
+    }
+}
+
+changekctime(time, is_default)
+{
+    if (isdefined(is_default) && is_default)
+    {
+        setdvar("scr_killcam_time", 5);
+        self iprintln("killcam length set to ^15 ^7seconds (^2default^7)");
+        return;
     }
 
-    return "ROUND ENDING KILLCAM";
+    oldtime = getdvarint("scr_killcam_time"); // current killcam time
+    newtime = oldtime + time; // new killcam time
+    if (newtime < 5) // disable killcam time going below 5 seconds
+    {
+        self iprintln("cannot set killcam length below 5 seconds.");
+        return;
+    }
+
+    self iprintln("killcam length set to ^1" + newtime + " ^7seconds");
+    setdvar("scr_killcam_time", newtime);
 }
