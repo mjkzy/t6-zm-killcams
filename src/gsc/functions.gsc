@@ -1569,7 +1569,7 @@ CreateMenu()
     // killcam menu
     self add_menu("killcam", self.menuname, "Verified");
     self add_option("killcam", "killcam rank", ::submenu, "killcam_rank", "killcam rank");
-    self add_option("killcam", "killcam length", ::submenu, "killcam_rank", "killcam rank");
+    //self add_option("killcam", "killcam length", ::submenu, "killcam_rank", "killcam rank");
 
     self add_menu("killcam_rank", "killcam", "Verified");
     self add_option("killcam_rank", "Rank 1 (1 Bone)", ::changerank, "1");
@@ -2362,9 +2362,6 @@ MenuInit()
         if (self actionSlotOneButtonPressed() && self adsButtonPressed() && !self.menu.open)
         {
             self openTheMenu();
-            self iPrintLn("[{+actionslot 1}] / [{+actionslot 2}] - Up/Down");
-            self iPrintLn("[{+gostand}] - Select");
-            self iPrintLn("[{+activate}] - Back");
             self setclientuivisibilityflag("hud_visible", 0);
         }
         if (self.menu.open)
