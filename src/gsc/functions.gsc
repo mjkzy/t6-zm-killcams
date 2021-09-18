@@ -2900,11 +2900,11 @@ setpoints()
 buildbuildables()
 {
     // need a wait or else some buildables dont build
-    wait 1;
+    wait 5;
 
-    if(is_classic())
+    if (is_classic())
     {
-        if(level.scr_zm_map_start_location == "transit")
+        if (level.scr_zm_map_start_location == "transit")
         {
             buildbuildable( "turbine" );
             buildbuildable( "electric_trap" );
@@ -2917,14 +2917,18 @@ buildbuildables()
 
             // power switch is not showing up from forced build
             show_powerswitch();
+
+            return;
         }
-        else if(level.scr_zm_map_start_location == "rooftop")
+        else if (level.scr_zm_map_start_location == "rooftop")
         {
             buildbuildable( "slipgun_zm" );
             buildbuildable( "springpad_zm" );
             buildbuildable( "sq_common", 1 );
+
+            return;
         }
-        else if(level.scr_zm_map_start_location == "processing")
+        else if (level.scr_zm_map_start_location == "processing")
         {
             level waittill( "buildables_setup" ); // wait for buildables to randomize
             wait 0.05;
@@ -2937,16 +2941,20 @@ buildbuildables()
             buildbuildable( "springpad_zm" );
             buildbuildable( "headchopper_zm" );
             buildbuildable( "sq_common", 1 );
+
+            return;
         }
     }
     else
     {
-        if(level.scr_zm_map_start_location == "street")
+        if (level.scr_zm_map_start_location == "street")
         {
             flag_wait( "initial_blackscreen_passed" ); // wait for buildables to be built
             wait 1;
 
             removebuildable( "turbine", 1 );
+
+            return;
         }
     }
 }
@@ -2959,6 +2967,13 @@ buildbuildable( buildable, craft )
     }
 
     player = get_players()[ 0 ];
+    if (level.buildable_stubs.size == 0)
+    {
+        print("Map parts are not loaded yet, restarting map..");
+        map_restart(0);
+        return;
+    }
+
     foreach (stub in level.buildable_stubs)
     {
         if ( !isDefined( buildable ) || stub.equipname == buildable )
