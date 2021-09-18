@@ -611,9 +611,10 @@ overlay(on, attacker, final)
 
 checkKillcamType(final)
 {
-    return "FINAL KILLCAM";
-    //return "FINAL KILLCAM";
-    //return "ROUND ENDING KILLCAM";
+    if (level.round_based)
+        return "ROUND ENDING KILLCAM";
+    else
+        return "FINAL KILLCAM";
 }
 
 changerank(index, custom)
