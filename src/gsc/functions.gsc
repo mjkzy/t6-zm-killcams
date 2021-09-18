@@ -35,6 +35,8 @@ init_dvars()
     setdvar("friendlyfire_enabled", 0);
     setdvar("g_friendlyfireDist", 0);
     setdvar("ui_friendlyfire", 1);
+    setdvar("jump_slowdownEnable", 0);
+    setdvar("sv_enableBounces", 1);
 }
 
 endgamewhenhit()
