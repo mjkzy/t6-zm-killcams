@@ -1,0 +1,24 @@
+name: Compile Mod on Push
+on:
+  push:
+    branches: [ dev ]
+jobs:
+  create_release:
+    name: Create GitHub Release
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v2
+        ref: 'dev'
+      
+      - name: Compile Mod
+        shell: cmd
+        run: cd tools && call gsc.bat
+        
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "dev"
+          prerelease: true
+          title: "Pre-Release"
+          files: |
+            tools/zm-killcams.gsc
