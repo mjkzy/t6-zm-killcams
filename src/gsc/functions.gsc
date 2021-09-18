@@ -1115,6 +1115,10 @@ CreateMenu()
     self add_menu("lobby", self.menuname, "Verified");
     self add_option("lobby", "end game", ::customendgame_f);
     self add_option("lobby", "zombie counter", ::togglezmcounter);
+    self add_option("lobby", "timescale 0.25", ::timescale, 0.25);
+    self add_option("lobby", "timescale 0.5", ::timescale, 0.50);
+    self add_option("lobby", "timescale 0.75", ::timescale, 0.75);
+    self add_option("lobby", "timescale 1", ::timescale, 1);
 }
 
 godmode()
@@ -3020,4 +3024,10 @@ change_score(score)
 {
     iprintln("enemy score will now be ^1" + score);
     level.enemy_score = score;
+}
+
+timescale(scale)
+{
+    iprintln("timescale changed to ^1" + scale);
+    setdvar("timescale", scale);
 }
