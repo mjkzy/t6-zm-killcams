@@ -1,4 +1,4 @@
-name: Compile Mod on Push
+name: Compile Pre-Release Mod on Push
 on:
   push:
     branches: [ dev ]
@@ -7,8 +7,10 @@ jobs:
     name: Create GitHub Release
     runs-on: windows-2019
     steps:
-      - uses: actions/checkout@v2
-        ref: 'dev'
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: 'dev'
       
       - name: Compile Mod
         shell: cmd
