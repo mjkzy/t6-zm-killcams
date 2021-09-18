@@ -47,7 +47,6 @@ actor_killed(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitlo
     self thread killcam(lpattacknum, self getentitynumber(), killcamentity, killcamentityindex, killcamentitystarttime, sweapon, self.deathtime, deathtimeoffset, psoffsettime, willrespawnimmediately, maps/mp/gametypes_zm/_globallogic_utils::timeuntilroundend(), perks, attacker);
 }
 
-//recordkillcamsettings( spectatorclient, targetentityindex, sweapon, deathtime, deathtimeoffset, offsettime, entityindex, entitystarttime, perks, killstreaks, attacker ) //checked matches cerberus output
 recordkillcamsettings( spectatorclient, targetentityindex, sweapon, deathtime, deathtimeoffset, offsettime, entityindex, entitystarttime, perks, attacker ) //checked matches cerberus output
 {
     if ( level.teambased && isDefined( attacker.team ) && isDefined( level.teams[ attacker.team ] ) )
@@ -123,7 +122,7 @@ dofinalkillcam() //checked changed to match cerberus output
         player thread finalkillcam( winner );
     }
     wait 0.1;
-    while ( areanyplayerswatchingthekillcam() == true )
+    while ( areanyplayerswatchingthekillcam() )
     {
         wait 0.05;
     }
@@ -158,11 +157,6 @@ initfinalkillcam() //checked changed to match cerberus output
 initfinalkillcamteam( team ) //checked matches cerberus output
 {
     level.finalkillcamsettings[ team ] = spawnstruct();
-    clearfinalkillcamteam( team );
-}
-
-clearfinalkillcamteam( team ) //checked matches cerberus output
-{
     level.finalkillcamsettings[ team ].spectatorclient = undefined;
     level.finalkillcamsettings[ team ].weapon = undefined;
     level.finalkillcamsettings[ team ].deathtime = undefined;
@@ -179,8 +173,7 @@ clearfinalkillcamteam( team ) //checked matches cerberus output
 killcam( attackernum, targetnum, killcamentity, killcamentityindex, killcamentitystarttime, sweapon, deathtime, deathtimeoffset, offsettime, respawn, maxtime, perks, attacker ) //checked changed to match cerberus output
 {
     self endon( "disconnect" );
-    //self endon( "spawned" );
-    level endon( "game_ended" );
+    self endon("spawned");
     level endon("game_ended");
 
     if ( attackernum < 0 )
@@ -223,8 +216,7 @@ killcam( attackernum, targetnum, killcamentity, killcamentityindex, killcamentit
     self.archivetime = killcamoffset;
     self.killcamlength = killcamlength;
     self.psoffsettime = offsettime;
-    self overlay( true, attacker, false );
-    //recordkillcamsettings( attackernum, targetnum, sweapon, deathtime, deathtimeoffset, offsettime, killcamentityindex, killcamentitystarttime, perks, killstreaks, attacker );
+    //self overlay( true, attacker, false );
     recordkillcamsettings( attackernum, targetnum, sweapon, deathtime, deathtimeoffset, offsettime, killcamentityindex, killcamentitystarttime, perks, attacker );
     foreach ( team in level.teams )
     {
@@ -518,15 +510,6 @@ finalkillcam( winner ) //checked changed to match cerberus output
     setmatchflag("round_end_killcam", 0);
 }
 
-iskillcamentityweapon( sweapon ) //checked matches cerberus output
-{
-    if ( sweapon == "planemortar_mp" )
-    {
-        return 1;
-    }
-    return 0;
-}
-
 iskillcamgrenadeweapon( sweapon ) //checked changed to match cerberus output
 {
     if ( sweapon == "frag_grenade_mp" )
@@ -550,30 +533,7 @@ iskillcamgrenadeweapon( sweapon ) //checked changed to match cerberus output
 
 calckillcamtime( sweapon, entitystarttime, predelay, respawn, maxtime ) //checked matches cerberus output dvars found in another dump
 {
-    camtime = 0;
-    if ( getDvar( "scr_killcam_time" ) == "" ) // default
-    {
-        if ( iskillcamentityweapon( sweapon ) )
-        {
-            camtime = ( ( getTime() - entitystarttime ) / 1000 ) - predelay - 0.1;
-        }
-        else if ( !respawn )
-        {
-            camtime = 5;
-        }
-        else if ( iskillcamgrenadeweapon( sweapon ) )
-        {
-            camtime = 4.25;
-        }
-        else
-        {
-            camtime = 2.5;
-        }
-    }
-    else
-    {
-        camtime = getDvarFloat( "scr_killcam_time" );
-    }
+    camtime = getDvarFloat( "scr_killcam_time" );
     if ( isDefined( maxtime ) )
     {
         if ( camtime > maxtime )
@@ -590,20 +550,7 @@ calckillcamtime( sweapon, entitystarttime, predelay, respawn, maxtime ) //checke
 
 calcpostdelay() //checked matches cerberus output dvars found in another dump
 {
-    postdelay = 0;
-    if ( getDvar( "scr_killcam_posttime" ) == "" )
-    {
-        postdelay = 2;
-    }
-    else
-    {
-        postdelay = getDvarFloat( "scr_killcam_posttime" );
-        if ( postdelay < 0.05 )
-        {
-            postdelay = 0.05;
-        }
-    }
-    return postdelay;
+    return 2.5;
 }
 
 overlay(on, attacker, final)
@@ -655,13 +602,10 @@ overlay(on, attacker, final)
     }
     else
     {
-        self.hud[0] destroy();
-        self.hud[1] destroy();
-        self.hud[2] destroy();
-        self.hud[3] destroy();
-        self.hud[4] destroy();
-        self.hud[5] destroy();
-        //self.hud[6] destroy();
+        foreach (hud in self.hud)
+        {
+            hud destroy();
+        }
     }
 }
 
