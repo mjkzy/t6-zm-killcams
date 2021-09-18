@@ -3523,17 +3523,17 @@ buildable_get_last_piece()
 buildcraftables()
 {
     // need a wait or else some buildables dont build
-    wait 1;
+    wait 5;
 
-    if(is_classic())
+    if (is_classic())
     {
-        if(level.scr_zm_map_start_location == "prison")
+        if (level.scr_zm_map_start_location == "prison")
         {
             buildcraftable( "alcatraz_shield_zm" );
             buildcraftable( "packasplat" );
             changecraftableoption( 0 );
         }
-        else if(level.scr_zm_map_start_location == "tomb")
+        else if (level.scr_zm_map_start_location == "tomb")
         {
             buildcraftable( "tomb_shield_zm" );
             buildcraftable( "equip_dieseldrone_zm" );
@@ -3598,6 +3598,13 @@ takecraftableparts( buildable )
 buildcraftable( buildable )
 {
     player = get_players()[ 0 ];
+    if (level.a_uts_craftables.size == 0)
+    {
+        print("Map craftables are not loaded yet, restarting map..");
+        map_restart(0);
+        return;
+    }
+    
     foreach (stub in level.a_uts_craftables)
     {
         if ( stub.craftablestub.name == buildable )
