@@ -191,10 +191,8 @@ init_afterhit()
     self.afterhit = [];
     self.afterhit[0] = SpawnStruct();
     self.afterhit[0].weap = "fivesevendw_zm";
-    self.afterhit[0].on = false;
     self.afterhit[1] = SpawnStruct();
     self.afterhit[1].weap = "zombie_knuckle_crack";
-    self.afterhit[1].on = false;
 
     // get random perk bottle, and one that is being used
     perks = [];
@@ -220,11 +218,19 @@ init_afterhit()
     self.afterhit[2] = SpawnStruct();
     perkindex = randomintrange(0, perks.size);
     self.afterhit[2].weap = perks[perkindex];
-    self.afterhit[2].on = false;
-
     self.afterhit[3] = SpawnStruct();
     self.afterhit[3].weap = "chalk_draw_zm";
-    self.afterhit[3].on = false;
+    self.afterhit[4] = SpawnStruct();
+    self.afterhit[4].weap = "syrette_zm";
+    self.afterhit[5] = SpawnStruct();
+    self.afterhit[5].weap = "zombie_tomahawk_flourish";
+    self.afterhit[6] = SpawnStruct();
+    self.afterhit[6].weap = "zombie_one_inch_punch_flourish";
+
+    for(i=0; i<self.afterhit.size; i++)
+    {
+        self.afterhit[i].on = false;
+    }
 }
 
 canToggleAfter()

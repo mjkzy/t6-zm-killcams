@@ -865,6 +865,12 @@ CreateMenu()
     self add_option("afterhit", "claymore r-mala", ::afterhitweapon, self.afterhit[0]);
     self add_option("afterhit", "knucles", ::afterhitweapon, self.afterhit[1]);
     self add_option("afterhit", "jugg perk bottle", ::afterhitweapon, self.afterhit[2]);
+    self add_option("afterhit", "chalk", ::afterhitweapon, self.afterhit[3]);
+    self add_option("afterhit", "syrette", ::afterhitweapon, self.afterhit[4]);
+    if (level.script == "zm_prison")
+        self add_option("afterhit", "tomahawk", ::afterhitweapon, self.afterhit[5]);
+    if (level.script == "zm_tomb")
+        self add_option("afterhit", "iron punch", ::afterhitweapon, self.afterhit[6]);
 
     // weapons:main
     self add_menu("weap", self.menuname, "Verified");
