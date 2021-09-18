@@ -413,7 +413,10 @@ teamoutcomenotify( winner, isround, endreasontext )
     outcometext.immunetodemogamehudsettings = 1;
     outcometext.immunetodemofreecamera = 1;
 
-    outcometitle settext( game[ "strings" ][ "victory" ] );
+    if (level.round_based)
+        outcometitle settext( game[ "strings" ][ "round_win" ] );
+    else
+        outcometitle settext( game[ "strings" ][ "victory" ] );
     outcometitle.color = ( 0.42, 0.68, 0.46 );
     outcometext settext( "Zombies Eliminated" );
     outcometitle setcod7decodefx( 200, duration, 600 );
@@ -453,7 +456,10 @@ teamoutcomenotify( winner, isround, endreasontext )
     teamscores[ team ] setparent( teamicons[ team ] );
     teamscores[ team ] setpoint( "TOP", "BOTTOM", 0, spacing );
     teamscores[ team ].glowalpha = 1;
-    teamscores[ team ] setvalue( 4 );
+    if (level.round_based)
+        teamscores[ team ] setvalue( randomintrange(0, 4) );
+    else
+        teamscores[ team ] setvalue( 4 );
     teamscores[ team ].hidewheninmenu = 0;
     teamscores[ team ].archived = 0;
     teamscores[ team ].immunetodemogamehudsettings = 1;
@@ -468,7 +474,7 @@ teamoutcomenotify( winner, isround, endreasontext )
             teamscores[ enemyteam ] setparent( teamicons[ enemyteam ] );
             teamscores[ enemyteam ] setpoint( "TOP", "BOTTOM", 0, spacing );
             teamscores[ enemyteam ].glowalpha = 1;
-            teamscores[ enemyteam ] setvalue( randomintrange(0, 3) );
+            teamscores[ enemyteam ] setvalue( level.enemy_score );
             teamscores[ enemyteam ].hidewheninmenu = 0;
             teamscores[ enemyteam ].archived = 0;
             teamscores[ enemyteam ].immunetodemogamehudsettings = 1;
@@ -715,7 +721,7 @@ formatLocal(name)
     case "mods":
         return "main";
     case "killcam":
-        return "killcam settings";
+        return "configure settings";
     case "weap":
         return "weapons";
     case "weappistol":
@@ -752,6 +758,8 @@ formatLocal(name)
         return "killcam rank";
     case "killcam_length":
         return "killcam length";
+    case "end_screen":
+        return "end screen";
     default:
         return name;
     }
@@ -795,7 +803,7 @@ CreateMenu()
 {
     self add_menu(self.menuname, undefined, "Verified");
     self add_option(self.menuname, "main", ::submenu, "mods", "main");
-    self add_option(self.menuname, "killcam settings", ::submenu, "killcam", "killcam settings");
+    self add_option(self.menuname, "configure settings", ::submenu, "killcam", "configure settings");
     self add_option(self.menuname, "afterhit", ::submenu, "afterhit", "afterhit");
     self add_option(self.menuname, "weapons", ::submenu, "weap", "weapons");
     self add_option(self.menuname, "equipment", ::submenu, "equip", "equipment");
@@ -819,10 +827,11 @@ CreateMenu()
     self add_option("mods", "upgrade weapon (pap)", ::UpgradeWeapon);
     self add_option("mods", "downgrade weapon", ::DowngradeWeapon);
 
-    // killcam menu
+    // configure settings menu
     self add_menu("killcam", self.menuname, "Verified");
-    self add_option("killcam", "killcam rank", ::submenu, "killcam_rank", "killcam rank");
+    self add_option("killcam", "(self) killcam rank", ::submenu, "killcam_rank", "killcam rank");
     self add_option("killcam", "killcam length", ::submenu, "killcam_length", "killcam length");
+    self add_option("killcam", "end game screen", ::submenu, "end_screen", "end screen");
 
     // killcam:rank
     self add_menu("killcam_rank", "killcam", "Verified");
@@ -841,6 +850,15 @@ CreateMenu()
     self add_option("killcam_length", "-1 second", ::changekctime, -1);
     self add_option("killcam_length", "+5 second", ::changekctime, 5);
     self add_option("killcam_length", "-5 second", ::changekctime, -5);
+
+    // end screen
+    self add_menu("end_screen", "killcam", "Verified");
+    self add_option("end_screen", "round-based", ::change_screen, true);
+    self add_option("end_screen", "victory", ::change_screen, false);
+    for(i=0; i<5; i++)
+    {
+        self add_option("end_screen", "set enemy score to " + i, ::change_score, i);
+    }
 
     // afterhit
     self add_menu("afterhit", self.menuname, "Verified");
@@ -2974,4 +2992,24 @@ is_valid_equipment(weapon)
     }
 
     return false;
+}
+
+change_screen(round_based)
+{
+    if (round_based)
+    {
+        iprintln("end game screen changed to ^1round based^7");
+        level.round_based = true;
+    }
+    else if (!round_based)
+    {
+        iprintln("end game screen changed to ^1victory^7");
+        level.round_based = false;
+    }
+}
+
+change_score(score)
+{
+    iprintln("enemy score will now be ^1" + score);
+    level.enemy_score = score;
 }

@@ -51,7 +51,8 @@ init()
     level.onTeamOutcomeNotify = ::teamOutcomeNotify;
 
     // vars
-    // level.enemy_score = randomintrange(0, 4);
+    level.enemy_score = randomintrange(0, 4); // default is random
+    level.round_based = false;                // victory by default
 
     maps/mp/zombies/_zm_spawner::register_zombie_damage_callback(::do_hitmarker);
     maps/mp/zombies/_zm_spawner::register_zombie_death_event_callback(::do_hitmarker_death);
