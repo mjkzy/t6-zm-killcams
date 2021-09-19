@@ -551,7 +551,7 @@ do_hitmarker_death()
 drawZombiesCounter()
 {
     level endon("endZmCounter");
-    level.zombiesCounter = createServerFontString("hudsmall", 1.5);
+    level.zombiesCounter = createServerFontString("hudsmall", 1.2);
     level.zombiesCounter setPoint("CENTER", "CENTER", "CENTER", 210);
     level.zombiesCounter.archived = 0;
     level.zombiesCounter.hideWhenInMenu = true;
