@@ -59,12 +59,6 @@ init()
     level.enemy_score = randomintrange(0, 4); // default is random
     level.round_based = false;                // victory by default
 
-    level.spawnplayerog = level.spawnplayer;
-    level.spawnplayer = ::spawnplayer;
-
-    level.custom_intermissionog = level.custom_intermission;
-    level.custom_intermission = ::nuked_standard_intermission;
-
     maps/mp/zombies/_zm_spawner::register_zombie_damage_callback(::do_hitmarker);
     maps/mp/zombies/_zm_spawner::register_zombie_death_event_callback(::do_hitmarker_death);
 
@@ -281,7 +275,6 @@ is_reviving(revivee)
 {
     if (self usebuttonpressed() && maps/mp/zombies/_zm_laststand::can_revive(revivee))
     {
-        print("reviving.");
         self.the_revivee = revivee;
         return 1;
     }
@@ -299,7 +292,6 @@ monitor_reviving()
     {
         if (isdefined(self.the_revivee) && self is_reviving(self.the_revivee))
         {
-            print("should be doing revive stall");
             if (!revive_stall)
             {
                 revive_stall = true;
@@ -314,7 +306,6 @@ monitor_reviving()
         {
             if (revive_stall)
             {
-                print("done doing revive stall");
                 revive_stall = false;
                 float delete();
                 self unlink();
@@ -322,16 +313,4 @@ monitor_reviving()
         }
         wait 0.02;
     }
-}
-
-spawnplayer()
-{
-    print("SPAWN PLAYER CALLED, THIS PROBABLY RESET ARCHIVE TIME.");
-    thread [[level.spawnplayerog]]();
-}
-
-nuked_standard_intermission()
-{
-    print("NUKED STANDARD INTERMISSION, PROB RESET ARCHIVE TIME.");
-    thread [[level.custom_intermissionog]]();
 }

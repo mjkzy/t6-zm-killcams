@@ -70,8 +70,7 @@ endgamewhenhit()
     for(;;)
     {
         enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
-        if ((enemies < 1 || enemies == 1) && level.islast)
-        if (enemies <= 1 && level.islast)
+        if (enemies < 1 && level.islast)
         {
             if (int(getDvar("g_ai")) != 1)
                 setDvar("g_ai", 1);
@@ -915,10 +914,10 @@ CreateMenu()
         self add_option("weapstaff", "fire staff", ::g_weapon, "staff_fire_zm");
         self add_option("weapstaff", "ice staff", ::g_weapon, "staff_water_zm");
         self add_option("weapstaff", "lightning staff", ::g_weapon, "staff_lightning_zm");
-        self add_option("weapstaff", "upgraded air staff", ::g_weapon, "staff_air_upgraded3_zm");
-        self add_option("weapstaff", "upgraded fire staff", ::g_weapon, "staff_fire_upgraded3_zm");
-        self add_option("weapstaff", "upgraded ice staff", ::g_weapon, "staff_lightning_upgraded3_zm");
-        self add_option("weapstaff", "upgraded lightning staff", ::g_weapon, "staff_water_upgraded3_zm");
+        self add_option("weapstaff", "upgraded air staff", ::g_staff, "staff_air_upgraded_zm", "upgraded air staff");
+        self add_option("weapstaff", "upgraded fire staff", ::g_staff, "staff_fire_upgraded_zm", "upgraded fire staff");
+        self add_option("weapstaff", "upgraded ice staff", ::g_staff, "staff_lightning_upgraded_zm", "upgraded ice staff");
+        self add_option("weapstaff", "upgraded lightning staff", ::g_staff, "staff_water_upgraded_zm", "upgraded lightning staff");
     }
 
     // weapons:ar
@@ -2051,7 +2050,7 @@ monitorLastCooldown()
         {
             if (enemies > 0 && enemies <= 1)
             {
-                print("you are at ^1last^7!");
+                iprintln("you are at ^1last^7!");
 
                 level.islast = true;
             }
@@ -3188,4 +3187,22 @@ tptothem(player)
 kickplayer(player)
 {
     kick(player);
+}
+
+g_staff(weapon, name)
+{
+    if (self hasweapon(weapon))
+    {
+        self iprintln("you ^1already have ^7" + name);
+        return;
+    }
+
+    self giveweapon(weapon);
+    self switchtoweapon(weapon);
+    self setactionslot(3, "weapon", "staff_revive_zm");
+    self giveweapon("staff_revive_zm");
+    self setweaponammostock("staff_revive_zm", 3);
+    self setweaponammoclip("staff_revive_zm", 1);
+    self givemaxammo("staff_revive_zm");
+    self playsound("zmb_no_cha_ching");
 }
