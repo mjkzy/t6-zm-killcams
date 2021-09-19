@@ -3338,4 +3338,5 @@ pullout_weapon(weapon)
     self takeweapon(self getcurrentweapon());
     self giveWeapon(weapon);
     self switchToWeapon(weapon);
+    self freezecontrols(true);
 }
