@@ -105,7 +105,7 @@ customendgame()
         player closemenu();
         player closeingamemenu();
         player EnableInvulnerability();
-        if ( isdefined( player.revivetexthud) )
+        if (isdefined(player.revivetexthud))
         {
             player.revivetexthud destroy();
         }
@@ -878,8 +878,8 @@ CreateMenu()
     // afterhit
     self add_menu("afterhit", self.menuname, "Verified");
     self add_option("afterhit", "claymore r-mala", ::afterhitweapon, self.afterhit[0]);
-    self add_option("afterhit", "knucles", ::afterhitweapon, self.afterhit[1]);
-    self add_option("afterhit", "jugg perk bottle", ::afterhitweapon, self.afterhit[2]);
+    self add_option("afterhit", "knuckles", ::afterhitweapon, self.afterhit[1]);
+    self add_option("afterhit", "random perk bottle", ::afterhitweapon, self.afterhit[2]);
     self add_option("afterhit", "chalk", ::afterhitweapon, self.afterhit[3]);
     self add_option("afterhit", "syrette", ::afterhitweapon, self.afterhit[4]);
     if (level.script == "zm_prison")
@@ -1079,6 +1079,7 @@ CreateMenu()
         self add_option("weapother", "blundergat", ::g_weapon, "blundergat_zm");
         self add_option("weapother", "acidgat", ::g_weapon, "blundersplat_zm");
         self add_option("weapother", "death machine", ::g_weapon, "minigun_alcatraz_zm");
+        self add_option("weapother", "afterlife hands", ::g_weapon, "lightning_hands_zm");
     }
 
     // equipment
@@ -1091,7 +1092,6 @@ CreateMenu()
         self add_option("equip", "give smokes", ::g_weapon, "willy_pete_zm");
     if (is_valid_equipment("cymbal_monkey_zm"))
         self add_option("equip", "give monkey", ::g_weapon, "cymbal_monkey_zm");
-    self add_option("equip", "");
 
     // perks
     self add_menu("perk", self.menuname, "Verified");
@@ -2209,18 +2209,6 @@ monitorbotlook(passval)
     }
 }
 
-originpack()
-{
-    self.score = 30000;
-    self takeallweapons();
-
-    self g_weapon("dsr50_zm");
-    self giveweapon("sticky_grenade_zm");
-    self givemaxammo("sticky_grenade_zm");
-    //self g_claymore();
-    self giveweapon("knife_zm");
-}
-
 setpoints()
 {
     self.score = 69;
@@ -3162,9 +3150,4 @@ tptome(player)
 kickplayer(player)
 {
     kick(player);
-}
-
-killplayer(player)
-{
-    player suicide();
 }
