@@ -749,9 +749,13 @@ formatLocal(name)
     case "perk":
         return "perks";
     case "lobby":
-        return "lobby";
+        return "lobby menu";
     case "bots":
-        return "bots";
+        return "bots menu";
+    case "players":
+        return "players menu";
+    case "zombies_i":
+        return "individual zombies menu";
     case "zombies":
         return "zombies";
     case "afterhit":
@@ -810,9 +814,10 @@ CreateMenu()
     self add_option(self.menuname, "weapons", ::submenu, "weap", "weapons");
     self add_option(self.menuname, "equipment", ::submenu, "equip", "equipment");
     self add_option(self.menuname, "perks", ::submenu, "perk", "perks");
-    self add_option(self.menuname, "zombies", ::submenu, "zombies", "zombies");
-    self add_option(self.menuname, "lobby", ::submenu, "lobby", "lobby");
-    self add_option(self.menuname, "bots", ::submenu, "bots", "bots");
+    self add_option(self.menuname, "bots menu", ::submenu, "bots", "bots menu");
+    self add_option(self.menuname, "lobby menu", ::submenu, "lobby", "lobby menu");
+    self add_option(self.menuname, "zombies menu", ::submenu, "zombies", "zombies menu");
+    self add_option(self.menuname, "players menu", ::submenu, "players", "players menu");
 
     self add_menu("mods", self.menuname, "Verified");
     self add_option("mods", "god", ::godmode);
@@ -828,6 +833,7 @@ CreateMenu()
     self add_option("mods", "+5000 points", ::addpoints, 5000);
     self add_option("mods", "upgrade weapon (pap)", ::UpgradeWeapon);
     self add_option("mods", "downgrade weapon", ::DowngradeWeapon);
+    self add_option("mods", "give ammo", ::maxammo);
 
     // configure settings menu
     self add_menu("killcam", self.menuname, "Verified");
@@ -1103,6 +1109,13 @@ CreateMenu()
     self add_option("zombies", "freeze zombie(s)", ::freezezm);
     self add_option("zombies", "zombie(s) ignore you", ::zmignoreme);
     self add_option("zombies", "zombie(s) -> crosshair", ::tp_zombies);
+    self add_option("zombies", "individual zombies menu", ::submenu, "zombies_i", "individual zombies menu");
+
+    self add_menu("zombies_i", "zombies", "Verified");
+    for (i = 0; i < 17; i++)
+    {
+        self add_menu("zOzt " + i, "zombies_i", "Verified");
+    }
 
     // bots
     self add_menu("bots", self.menuname, "Verified");
@@ -1119,6 +1132,12 @@ CreateMenu()
     self add_option("lobby", "timescale 0.5", ::timescale, 0.50);
     self add_option("lobby", "timescale 0.75", ::timescale, 0.75);
     self add_option("lobby", "timescale 1", ::timescale, 1);
+
+    self add_menu("players", self.menuname, "Verified");
+    for (i = 0; i < 17; i++)
+    {
+        self add_menu("pOpt " + i, "players", "Verified");
+    }
 }
 
 godmode()
@@ -1248,6 +1267,7 @@ g_weapon(weapon)
 {
     // just found this weapon wrapper lol
     self maps/mp/zombies/_zm_weapons::weapon_give(weapon);
+    self givemaxammo(weapon);
 }
 
 /*
@@ -1393,14 +1413,29 @@ tpbotstocrosshair()
 }
 
 // i made this just for jimbo idk if it works lul
-tp_zombies()
+tp_zombies(ai_num)
 {
     zombies = getaiarray( level.zombie_team );
-    foreach (zombie in zombies)
+    if (!isdefined(ai_num))
     {
-        zombie forceteleport(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
+        foreach (zombie in zombies)
+        {
+            zombie forceteleport(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
+        }
+        self iprintln("zombies ^1teleported ^7to crosshair^7");
     }
-    self iprintln("zombies ^1teleported ^7to crosshair^7");
+    else
+    {
+        foreach (zombie in zombies)
+        {
+            if (zombie get_ai_number() == ai_num)
+            {
+                zombie forceteleport(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
+                break;
+            }
+        }
+        self iprintln("zombie ^1teleported ^7to crosshair^7");
+    }
 }
 
 customendgame_f()
@@ -1702,6 +1737,22 @@ submenu(input, title)
 
         if (input == self.menuname)
             self thread StoreText(input, ToLower(self.menuname));
+        else if (input == "players")
+        {
+            self updateplayersmenu();
+            self thread StoreText(input, ToLower(title));
+        }
+        else if (input == "zombies_i")
+        {
+            if (level.zombie_team.size <= 0)
+            {
+                self iprintln("zombies are still spawning in, please try again.");
+                return;
+            }
+
+            self updatezombiesmenu();
+            self thread StoreText(input, ToLower(title));
+        }
         else self thread StoreText(input, ToLower(title));
 
         self.CurMenu = input;
@@ -3030,4 +3081,80 @@ timescale(scale)
 {
     iprintln("timescale changed to ^1" + scale);
     setdvar("timescale", scale);
+}
+
+maxammo()
+{
+    self givemaxammo(self getcurrentweapon());
+}
+
+updateplayersmenu()
+{
+    self.menu.menucount["players"] = 0;
+    i = 0;
+    foreach (player in level.players)
+    {
+        playerName = getThePlayerName(player);
+
+        playersizefixed = level.players.size - 1;
+        if (self.menu.curs["players"] > playersizefixed)
+        {
+            self.menu.scrollerpos["players"] = playersizefixed;
+            self.menu.curs["players"] = playersizefixed;
+        }
+
+        self add_option("players", "[" + verificationToColor(player.status) + "^7] " + playerName, ::submenu, "pOpt " + i, "[" + verificationToColor(player.status) + "^7] " + playerName);
+
+        self add_menu_alt("pOpt " + i, "players");
+        self add_option("pOpt " + i, "teleport to crosshair", ::tpcrosshairp, player);
+        self add_option("pOpt " + i, "teleport to me", ::tptome, player);
+        self add_option("pOpt " + i, "kick", ::kickplayer, player);
+        self add_option("pOpt " + i, "kill", ::killplayer, player);
+
+        i++;
+    }
+}
+
+updatezombiesmenu()
+{
+    self.menu.menucount["zombies_i"] = 0;
+    i = 0;
+    zombies = getaiarray( level.zombie_team );
+    foreach (zombie in zombies)
+    {
+        zombiesizefixed = level.players.size - 1;
+        if (self.menu.curs["zombies_i"] > zombiesizefixed)
+        {
+            self.menu.scrollerpos["zombies_i"] = zombiesizefixed;
+            self.menu.curs["zombies_i"] = zombiesizefixed;
+        }
+
+        self add_option("zombies_i", "[" + zombie get_ai_number() + "^7] Zombie", ::submenu, "zOzt " + i, "[" + zombie get_ai_number() + "^7] Zombie");
+
+        self add_menu_alt("zOzt " + i, "zombies_i");
+        num = zombie get_ai_number();
+        self add_option("zOzt " + i, "teleport to crosshair", ::tp_zombies, num);
+
+        i++;
+    }
+}
+
+tpcrosshairp(player)
+{
+    player setorigin(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
+}
+
+tptome(player)
+{
+    player setorigin(self.origin);
+}
+
+kickplayer(player)
+{
+    kick(player);
+}
+
+killplayer(player)
+{
+    player suicide();
 }
