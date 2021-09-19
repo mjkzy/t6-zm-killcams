@@ -24,7 +24,14 @@ init_precache()
 
     precacheitem("zombie_knuckle_crack");
     precacheitem("zombie_perk_bottle_jugg");
+    precacheitem("zombie_perk_bottle_sleight");
+    precacheitem("zombie_perk_bottle_doubletap");
+    precacheitem("zombie_perk_bottle_deadshot");
+    precacheitem("zombie_perk_bottle_tombstone");
+    precacheitem("zombie_perk_bottle_additionalprimaryweapon");
+    precacheitem("zombie_perk_bottle_revive");
     precacheitem("chalk_draw_zm");
+    precacheitem("lightning_hands_zm");
 }
 
 init_dvars()
@@ -876,9 +883,12 @@ CreateMenu()
     self add_option("afterhit", "chalk", ::afterhitweapon, self.afterhit[3]);
     self add_option("afterhit", "syrette", ::afterhitweapon, self.afterhit[4]);
     if (level.script == "zm_prison")
+    {
         self add_option("afterhit", "tomahawk", ::afterhitweapon, self.afterhit[5]);
+        self add_option("afterhit", "afterlife hands", ::afterhitweapon, self.afterhit[6]);
+    }
     if (level.script == "zm_tomb")
-        self add_option("afterhit", "iron punch", ::afterhitweapon, self.afterhit[6]);
+        self add_option("afterhit", "iron punch", ::afterhitweapon, self.afterhit[7]);
 
     // weapons:main
     self add_menu("weap", self.menuname, "Verified");
