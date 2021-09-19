@@ -38,8 +38,6 @@ main()
 
 init()
 {
-    setdvar("scr_killcam_time", 5);
-
     init_precache();
     init_dvars();
 

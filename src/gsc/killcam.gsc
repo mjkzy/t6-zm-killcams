@@ -182,8 +182,8 @@ killcam( attackernum, targetnum, killcamentity, killcamentityindex, killcamentit
     }
     postdeathdelay = ( getTime() - deathtime ) / 1000;
     predelay = postdeathdelay + deathtimeoffset;
-    camtime = calckillcamtime( sweapon, killcamentitystarttime, predelay, respawn, maxtime );
-    postdelay = calcpostdelay();
+    camtime = attacker calckillcamtime( sweapon, killcamentitystarttime, predelay, respawn, maxtime );
+    postdelay = 2.5;
     killcamlength = camtime + postdelay;
     if ( isDefined( maxtime ) && killcamlength > maxtime )
     {
@@ -460,8 +460,8 @@ finalkillcam( winner ) //checked changed to match cerberus output
     killcamsettings = level.finalkillcamsettings[ winner ];
     postdeathdelay = ( getTime() - killcamsettings.deathtime ) / 1000;
     predelay = postdeathdelay + killcamsettings.deathtimeoffset;
-    camtime = calckillcamtime( killcamsettings.weapon, killcamsettings.entitystarttime, predelay, 0, undefined );
-    postdelay = calcpostdelay();
+    camtime = attacker calckillcamtime( killcamsettings.weapon, killcamsettings.entitystarttime, predelay, 0, undefined );
+    postdelay = 2.5;
     killcamoffset = camtime + predelay;
     killcamlength = ( camtime + postdelay ) - 0.05;
     killcamstarttime = getTime() - ( killcamoffset * 1000 );
@@ -534,7 +534,7 @@ iskillcamgrenadeweapon( sweapon ) //checked changed to match cerberus output
 
 calckillcamtime( sweapon, entitystarttime, predelay, respawn, maxtime ) //checked matches cerberus output dvars found in another dump
 {
-    camtime = getDvarFloat( "scr_killcam_time" );
+    camtime = self.killcam_length;
     if ( isDefined( maxtime ) )
     {
         if ( camtime > maxtime )
@@ -547,11 +547,6 @@ calckillcamtime( sweapon, entitystarttime, predelay, respawn, maxtime ) //checke
         }
     }
     return camtime;
-}
-
-calcpostdelay() //checked matches cerberus output dvars found in another dump
-{
-    return 2.5;
 }
 
 overlay(on, attacker, final)
@@ -646,15 +641,16 @@ changerank(index, custom)
 
 changekctime(time, is_default)
 {
+    if (!isdefined(self.killcam_length)) self.killcam_length = 5;
+
     if (isdefined(is_default) && is_default)
     {
-        setdvar("scr_killcam_time", 5);
+        self.killcam_length = 5;
         self iprintln("killcam length set to ^15 ^7seconds (^2default^7)");
         return;
     }
 
-    oldtime = getdvarint("scr_killcam_time"); // current killcam time
-    newtime = oldtime + time; // new killcam time
+    newtime = self.killcam_length + time; // new killcam time
     if (newtime < 5) // disable killcam time going below 5 seconds
     {
         self iprintln("cannot set killcam length below 5 seconds.");
@@ -662,5 +658,10 @@ changekctime(time, is_default)
     }
 
     self iprintln("killcam length set to ^1" + newtime + " ^7seconds");
-    setdvar("scr_killcam_time", newtime);
+    foreach (player in level.players)
+    {
+        if (self != player)
+            player iprintln(self.name + " changed their killcam length to ^1" + newtime + " ^7seconds");
+    }
+    self.killcam_length = newtime;
 }
