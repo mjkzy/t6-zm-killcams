@@ -1089,8 +1089,16 @@ CreateMenu()
         self add_option("equip", "give emp", ::g_weapon, "emp_grenade_zm");
     if (is_valid_equipment("willy_pete_zm"))
         self add_option("equip", "give smokes", ::g_weapon, "willy_pete_zm");
+    if (is_valid_equipment("spoon_zm_alcatraz"))
+        self add_option("equip", "give spork", ::g_weapon, "spoon_zm_alcatraz");
     if (is_valid_equipment("cymbal_monkey_zm"))
         self add_option("equip", "give monkey", ::g_weapon, "cymbal_monkey_zm");
+    if (is_valid_equipment("time_bomb_zm") && isdefined(level.zombiemode_time_bomb_give_func))
+        self add_option("equip", "give time bomb", ::g_timebomb);
+    if (is_valid_equipment("beacon_zm"))
+        self add_option("equip", "give g strike", ::g_beacon);
+    if (is_valid_equipment("claymore_zm"))
+        self add_option("equip", "give claymore", ::g_claymore);
 
     // perks
     self add_menu("perk", self.menuname, "Verified");
@@ -1540,7 +1548,7 @@ openTheMenu()
         self iPrintLn("[{+activate}] - back");
         self.firstmenuopen = false;
     }
-    
+
     self.menu.background thread moveItTo("x", 263+self.menuxpos, .4);
     self.menu.scroller thread moveItTo("x", 263+self.menuxpos, .4);
     self.menu.background FadeOverTime(0.6);
@@ -3075,6 +3083,10 @@ is_valid_equipment(weapon)
     {
         return false;
     }
+    if (isdefined(level.zombie_include_weapons[weapon]))
+    {
+        return true;
+    }
     if (isdefined(level.zombie_weapons[weapon]))
     {
         return true;
@@ -3339,4 +3351,19 @@ pullout_weapon(weapon)
     self giveWeapon(weapon);
     self switchToWeapon(weapon);
     self freezecontrols(true);
+}
+
+g_timebomb()
+{
+    self thread [[level.zombiemode_time_bomb_give_func]]();
+}
+
+g_beacon()
+{
+    self thread [[level.zombie_weapons_callbacks["beacon_zm"]]]();
+}
+
+g_claymore()
+{
+    self thread maps/mp/zombies/_zm_weap_claymore::claymore_watch();
 }
