@@ -125,6 +125,7 @@ onPlayerSpawned()
     self.ufospeed = 20;
 
     self.killcam_rank = "zombies_rank_5"; // max rank by default
+    self.killcam_length = 5;
 
     init_afterhit();
 

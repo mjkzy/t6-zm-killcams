@@ -641,8 +641,6 @@ changerank(index, custom)
 
 changekctime(time, is_default)
 {
-    if (!isdefined(self.killcam_length)) self.killcam_length = 5;
-
     if (isdefined(is_default) && is_default)
     {
         self.killcam_length = 5;
