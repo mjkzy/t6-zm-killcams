@@ -551,7 +551,7 @@ do_hitmarker_death()
 drawZombiesCounter()
 {
     level endon("endZmCounter");
-    level.zombiesCounter = createServerFontString("hudsmall", 1.5);
+    level.zombiesCounter = createServerFontString("hudsmall", 1.2);
     level.zombiesCounter setPoint("CENTER", "CENTER", "CENTER", 210);
     level.zombiesCounter.archived = 0;
     level.zombiesCounter.hideWhenInMenu = true;
@@ -739,7 +739,7 @@ formatLocal(name)
     case "weapother":
         return "others";
     case "weapstaff":
-        return "weapstaff";
+        return "staffs";
     case "weapsmg":
         return "smg";
     case "weaplmg":
@@ -762,10 +762,6 @@ formatLocal(name)
         return "players menu";
     case "zombies_i":
         return "individual zombies menu";
-    case "zombies":
-        return "zombies";
-    case "afterhit":
-        return "afterhit";
     case "killcam_rank":
         return "killcam rank";
     case "killcam_length":
@@ -815,6 +811,7 @@ CreateMenu()
 {
     self add_menu(self.menuname, undefined, "Verified");
     self add_option(self.menuname, "main", ::submenu, "mods", "main");
+    self add_option(self.menuname, "teleport", ::submenu, "teleport", "teleport");
     self add_option(self.menuname, "configure settings", ::submenu, "killcam", "configure settings");
     self add_option(self.menuname, "afterhit", ::submenu, "afterhit", "afterhit");
     self add_option(self.menuname, "weapons", ::submenu, "weap", "weapons");
@@ -840,6 +837,55 @@ CreateMenu()
     self add_option("mods", "upgrade weapon (pap)", ::UpgradeWeapon);
     self add_option("mods", "downgrade weapon", ::DowngradeWeapon);
     self add_option("mods", "give ammo", ::maxammo);
+
+    self add_menu("teleport", self.menuname, "Verified");
+
+    // thank you @miyzu!!!
+    if (level.script == "zm_transit")
+    {
+        // oom / custom
+        self add_option("teleport", "town bank barrier", ::teleportPlayer, (638.639, -93.0055, 1024.13), (0, -93.3551, 0));
+        self add_option("teleport", "town church", ::teleportPlayer, (1318.84, -2634.33, 1023.71), (0, -78.5668, 0));
+        self add_option("teleport", "town spot #1", ::teleportPlayer, (1099.07, -819.43, 120.125), (0, 44.6934, 0));
+        self add_option("teleport", "town bar barrier", ::teleportPlayer, (2425.03, -128.08, 1029.13), (0, -130.28, 0));
+        self add_option("teleport", "top of farm", ::teleportPlayer, (7916.54, -4598.8, 1024.13), (0, -120.618, 0));
+        self add_option("teleport", "cool farm spot #1", ::teleportPlayer, (8285.4, -6780.23, 1024.13), (0, -3.36353, 0));
+        self add_option("teleport", "cool farm spot #2", ::teleportPlayer, (8211.21, -3589.19, 642.349), (0, -120.462, 0));
+        self add_option("teleport", "road spot", ::teleportPlayer, (-9439.18, -6810.59, 576.125), (0, -120.462, 0));
+        self add_option("teleport", "tree spot", ::teleportPlayer, (5932.1, 7440.97, 1022.26), (0, 61.7558, 0));
+
+        // base / copy
+        self add_option("teleport", "pack a punch", ::teleportPlayer, (1946, -183, -303), (0, -93.3551, 0));
+        self add_option("teleport", "bus depot", ::teleportPlayer, (-7108,4680,-65));
+        self add_option("teleport", "diner", ::teleportPlayer, (-5010,-7189,-57));
+    }
+    else if (level.script == "zm_highrise")
+    {
+        // oom / custom
+        self add_option("teleport", "oom #1", ::teleportPlayer, (1456.42, 966.383, 3920.13), (0, -64.9389, 0));
+        self add_option("teleport", "oom #2", ::teleportPlayer, (3706.94, 862.985, 3960.13), (0, -159.658, 0));
+
+        // base / copy
+        self add_option("teleport", "slide", ::teleportPlayer, (2223.68, 2555.14, 3043.49), (0, -2.5975, 0));
+        self add_option("teleport", "roof", ::teleportPlayer, (1965.23, 151.344, 2880.13));
+        self add_option("teleport", "spawn", ::teleportPlayer, (1464.25, 1377.69, 3397.46));
+        self add_option("teleport", "power", ::teleportPlayer, (2614.06, 30.8681, 1296.13));
+        self add_option("teleport", "broken elevator", ::teleportPlayer, (3700.51, 2173.41, 2575.47));
+        self add_option("teleport", "red room", ::teleportPlayer, (3176.08, 1426.12, 1298.53));
+    }
+    else if (level.script == "zm_buried")
+    {
+        self add_option("teleport", "spawn", ::teleportPlayer, (-2689.08, -761.858, 1360.13));
+        self add_option("teleport", "under spawn", ::teleportPlayer, (-2689.08, -761.858, 1360.13));
+        self add_option("teleport", "bank", ::teleportPlayer, (2614.06, 30.8681, 1296.13));
+        self add_option("teleport", "bar", ::teleportPlayer, (790.854, -1433.25, 56.125));
+        self add_option("teleport", "leroy cell", ::teleportPlayer, (-1081.72, 830.04, 8.125));
+        self add_option("teleport", "middle of maze", ::teleportPlayer, (4920.74, 454.216, 4.125));
+    }
+    else
+    {
+        self add_option("teleport", "coming soon!");
+    }
 
     // configure settings menu
     self add_menu("killcam", self.menuname, "Verified");
@@ -1089,8 +1135,16 @@ CreateMenu()
         self add_option("equip", "give emp", ::g_weapon, "emp_grenade_zm");
     if (is_valid_equipment("willy_pete_zm"))
         self add_option("equip", "give smokes", ::g_weapon, "willy_pete_zm");
+    if (is_valid_equipment("spoon_zm_alcatraz"))
+        self add_option("equip", "give spork", ::g_weapon, "spoon_zm_alcatraz");
     if (is_valid_equipment("cymbal_monkey_zm"))
         self add_option("equip", "give monkey", ::g_weapon, "cymbal_monkey_zm");
+    if (is_valid_equipment("time_bomb_zm") && isdefined(level.zombiemode_time_bomb_give_func))
+        self add_option("equip", "give time bomb", ::g_timebomb);
+    if (is_valid_equipment("beacon_zm"))
+        self add_option("equip", "give g strike", ::g_beacon);
+    if (is_valid_equipment("claymore_zm"))
+        self add_option("equip", "give claymore", ::g_claymore);
 
     // perks
     self add_menu("perk", self.menuname, "Verified");
@@ -1540,7 +1594,7 @@ openTheMenu()
         self iPrintLn("[{+activate}] - back");
         self.firstmenuopen = false;
     }
-    
+
     self.menu.background thread moveItTo("x", 263+self.menuxpos, .4);
     self.menu.scroller thread moveItTo("x", 263+self.menuxpos, .4);
     self.menu.background FadeOverTime(0.6);
@@ -3075,6 +3129,10 @@ is_valid_equipment(weapon)
     {
         return false;
     }
+    if (isdefined(level.zombie_include_weapons[weapon]))
+    {
+        return true;
+    }
     if (isdefined(level.zombie_weapons[weapon]))
     {
         return true;
@@ -3338,4 +3396,29 @@ pullout_weapon(weapon)
     self takeweapon(self getcurrentweapon());
     self giveWeapon(weapon);
     self switchToWeapon(weapon);
+    self freezecontrols(true);
+}
+
+g_timebomb()
+{
+    self thread [[level.zombiemode_time_bomb_give_func]]();
+}
+
+g_beacon()
+{
+    self thread [[level.zombie_weapons_callbacks["beacon_zm"]]]();
+}
+
+g_claymore()
+{
+    self thread maps/mp/zombies/_zm_weap_claymore::claymore_watch();
+}
+
+teleportPlayer(origin, angles)
+{
+    self setorigin(origin);
+    if (isdefined(angles))
+    {
+        self setplayerangles(angles);
+    }
 }

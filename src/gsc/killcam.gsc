@@ -119,10 +119,7 @@ dofinalkillcam() //checked changed to match cerberus output
         player = players[ index ];
         player closemenu();
         player closeingamemenu();
-        if (!isdefined(player.pers["isBot"]) && !player.pers["isBot"])
-        {
-            player thread finalkillcam( winner );
-        }
+        player thread finalkillcam( winner );
     }
     wait 0.1;
     while ( areanyplayerswatchingthekillcam() )
@@ -138,12 +135,9 @@ areanyplayerswatchingthekillcam() //checked changed to match cerberus output
 {
     foreach (player in level.players)
     {
-        if (!isdefined(player.pers["isBot"]) && !player.pers["isBot"])
+        if (isDefined(player.killcam) && player.killcam)
         {
-            if (isDefined(player.killcam) && player.killcam)
-            {
-                return true;
-            }
+            return true;
         }
     }
     return false;
