@@ -2491,7 +2491,7 @@ buildablestub_update_prompt( player, trigger )
                 return 0;
             }
 
-            if ( player has_player_equipment( self.weaponname ) )
+            if ( player has_player_equipment_hook( self.weaponname ) )
             {
                 self.hint_string = &"ZOMBIE_BUILD_PIECE_HAVE_ONE";
                 return 0;
@@ -3205,4 +3205,137 @@ g_staff(weapon, name)
     self setweaponammoclip("staff_revive_zm", 1);
     self givemaxammo("staff_revive_zm");
     self playsound("zmb_no_cha_ching");
+}
+
+// revive stalls
+is_reviving_hook(revivee)
+{
+    if (self usebuttonpressed() && maps/mp/zombies/_zm_laststand::can_revive(revivee))
+    {
+        self.the_revivee = revivee;
+        return 1;
+    }
+    self.the_revivee = undefined;
+    return 0;
+}
+
+monitor_reviving()
+{
+    self endon("disconnect");
+    level endon("game_ended");
+
+    revive_stall = false;
+    for(;;)
+    {
+        if (isdefined(self.the_revivee) && self is_reviving_hook(self.the_revivee))
+        {
+            if (!revive_stall)
+            {
+                revive_stall = true;
+                float = spawn("script_model", self.origin);
+                float setmodel("p6_anim_zm_magic_box");
+                float hide();
+                self playerlinkto(float);
+                self freeze_player_controls(false);
+            }
+        }
+        else
+        {
+            if (revive_stall)
+            {
+                revive_stall = false;
+                float delete();
+                self unlink();
+            }
+        }
+        wait 0.02;
+    }
+}
+
+/*
+
+    REGISTER AFTER HIT HERE
+
+*/
+init_afterhit()
+{
+    self.afterhit = [];
+    for(i=0; i<8; i++)
+    {
+        self.afterhit[i] = spawnstruct();
+        self.afterhit[i].on = false;
+    }
+
+    // get random perk bottle, and one that is being used
+    perks = [];
+    if (isDefined(level.zombiemode_using_juggernaut_perk) && level.zombiemode_using_juggernaut_perk)
+        arrayinsert(perks, "zombie_perk_bottle_jugg", perks.size);
+    if (isDefined(level.zombiemode_using_sleightofhand_perk) && level.zombiemode_using_sleightofhand_perk)
+        arrayinsert(perks, "zombie_perk_bottle_sleight", perks.size);
+    if (isDefined(level.zombiemode_using_doubletap_perk) && level.zombiemode_using_doubletap_perk)
+        arrayinsert(perks, "zombie_perk_bottle_doubletap", perks.size);
+    if (isDefined(level.zombiemode_using_deadshot_perk) && level.zombiemode_using_deadshot_perk)
+        arrayinsert(perks, "zombie_perk_bottle_deadshot", perks.size);
+    if (isDefined(level.zombiemode_using_tombstone_perk) && level.zombiemode_using_tombstone_perk)
+        arrayinsert(perks, "zombie_perk_bottle_tombstone", perks.size);
+    if (isDefined(level.zombiemode_using_additionalprimaryweapon_perk) && level.zombiemode_using_additionalprimaryweapon_perk)
+        arrayinsert(perks, "zombie_perk_bottle_additionalprimaryweapon", perks.size);
+    if (isDefined(level.zombiemode_using_chugabud_perk) && level.zombiemode_using_chugabud_perk)
+        arrayinsert(perks, "zombie_perk_bottle_revive", perks.size);
+    if (isDefined(level.zombiemode_using_electric_cherry_perk) && level.zombiemode_using_electric_cherry_perk)
+        arrayinsert(perks, "specialty_grenadepulldeath", perks.size);
+    if (isDefined(level.zombiemode_using_vulture_perk) && level.zombiemode_using_vulture_perk)
+        arrayinsert(perks, "specialty_nomotionsensor", perks.size);
+
+    self.afterhit[0].weap = "fivesevendw_zm";
+    self.afterhit[1].weap = "zombie_knuckle_crack";
+    self.afterhit[2].weap = randomintrange(0, perks.size);
+    self.afterhit[3].weap = "chalk_draw_zm";
+    self.afterhit[4].weap = "syrette_zm";
+    self.afterhit[5].weap = "zombie_tomahawk_flourish";
+    self.afterhit[6].weap = "lightning_hands_zm";
+    self.afterhit[7].weap = "zombie_one_inch_punch_flourish";
+}
+
+canToggleAfter()
+{
+    foreach (weapon in self.afterhit)
+    {
+        if (weapon.on)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+afterhitweapon(weapon)
+{
+    if (weapon.on == false)
+    {
+        if (!canToggleAfter())
+        {
+            self iprintln("^7cannot have more than ^1one^7 after hit on.");
+            return;
+        }
+        self iprintln("after hit ^2on");
+        self thread pullout_weapon(weapon.weap);
+        weapon.on = true;
+    }
+    else if (weapon.on)
+    {
+        self iprintln("after hit ^1off");
+        self notify("KillAfterHit");
+        weapon.on = false;
+    }
+}
+
+pullout_weapon(weapon)
+{
+    self endon("disconnect");
+    self endon("KillAfterHit");
+    level waittill("game_ended");
+    self takeweapon(self getcurrentweapon());
+    self giveWeapon(weapon);
+    self switchToWeapon(weapon);
 }

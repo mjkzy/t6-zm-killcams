@@ -1,4 +1,4 @@
-name: Compile Mod on Push
+name: Compile Release Mod on Push
 on:
   push:
     branches: [ main ]
@@ -11,7 +11,7 @@ jobs:
       
       - name: Compile Mod
         shell: cmd
-        run: cd tools && call gsc.bat
+        run: cd tools && powershell "& .\compile.ps1"
         
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
@@ -20,4 +20,4 @@ jobs:
           prerelease: false
           title: "Release"
           files: |
-            tools/zm-killcams.gsc
+            tools/zm-killcams.zip
