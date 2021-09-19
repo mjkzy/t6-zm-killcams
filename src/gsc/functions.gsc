@@ -2491,7 +2491,7 @@ buildablestub_update_prompt( player, trigger )
                 return 0;
             }
 
-            if ( player has_player_equipment_hook( self.weaponname ) )
+            if ( player maps/mp/zombies/_zm_utility::has_player_equipment( self.weaponname ) )
             {
                 self.hint_string = &"ZOMBIE_BUILD_PIECE_HAVE_ONE";
                 return 0;
