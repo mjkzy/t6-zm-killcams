@@ -1,23 +1,30 @@
-name: Compile Mod on Push
+name: "Compile Release Mod"
+
 on:
   push:
-    branches: [ main ]
+    branches:
+      - "main"
+
 jobs:
-  create_release:
-    name: Create GitHub Release
-    runs-on: windows-2019
+  release:
+    name: "Release"
+    runs-on: "windows-2019"
+
     steps:
-      - uses: actions/checkout@v2
+      - name: "Checkout"
+        uses: "actions/checkout@v2"
+        with:
+          ref: 'main'
       
-      - name: Compile Mod
-        shell: cmd
-        run: cd tools && call gsc.bat
+      - name: "Compile Test Mod"
+        shell: "cmd"
+        run: cd tools && powershell "& .\compile.ps1"
         
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "latest"
           prerelease: false
-          title: "Release"
+          title: "Release Mod"
           files: |
-            tools/zm-killcams.gsc
+            tools/zm-killcams.zip

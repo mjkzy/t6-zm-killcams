@@ -16,12 +16,24 @@ init_precache()
     precacheshader("zombies_rank_5");
     precacheshader("emblem_bg_default");
     precacheshader("damage_feedback");
-    precacheshader( "hud_status_dead" );
+    precacheshader("hud_status_dead");
     precacheshader("specialty_instakill_zombies");
+    precacheshader("menu_lobby_icon_twitter");
+    precacheshader("faction_cia");
+    precacheshader("faction_cdc");
 
-    precacheitem( "zombie_knuckle_crack" );
-    precacheitem( "zombie_perk_bottle_jugg" );
-    precacheitem( "chalk_draw_zm" );
+    precachemodel("p6_anim_zm_magic_box");
+
+    precacheitem("zombie_knuckle_crack");
+    precacheitem("zombie_perk_bottle_jugg");
+    precacheitem("zombie_perk_bottle_sleight");
+    precacheitem("zombie_perk_bottle_doubletap");
+    precacheitem("zombie_perk_bottle_deadshot");
+    precacheitem("zombie_perk_bottle_tombstone");
+    precacheitem("zombie_perk_bottle_additionalprimaryweapon");
+    precacheitem("zombie_perk_bottle_revive");
+    precacheitem("chalk_draw_zm");
+    precacheitem("lightning_hands_zm");
 }
 
 init_dvars()
@@ -32,6 +44,9 @@ init_dvars()
     setdvar("friendlyfire_enabled", 0);
     setdvar("g_friendlyfireDist", 0);
     setdvar("ui_friendlyfire", 1);
+    setdvar("jump_slowdownEnable", 0);
+    setdvar("sv_enableBounces", 1);
+    setdvar("player_lastStandBleedoutTime", 9999);
 }
 
 endgamewhenhit()
@@ -55,17 +70,13 @@ endgamewhenhit()
     for(;;)
     {
         enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
-        if ((enemies < 1 || enemies == 1) && level.islast)
+        if (enemies < 1 && level.islast)
         {
-            if (getDvar("g_ai") != 1)
+            if (int(getDvar("g_ai")) != 1)
                 setDvar("g_ai", 1);
 
             level thread customendgame();
 
-            // kill rest
-            zombs = getaiarray( level.zombie_team );
-            foreach (zomb in zombs)
-                zombs dodamage(zombs[i].health * 5000, (0, 0, 0));
             break;
         }
         wait 0.05;
@@ -75,12 +86,12 @@ endgamewhenhit()
 // MP endgame + parts of end_game from _zm
 customendgame()
 {
-    winner = level.last_attacker;
+    winner = level.last_attacker.team;
 
     if (game["state"] == "postgame" || level.gameEnded) return;
-    if (isDefined(level.on)) [[level.onEndGame]](winner);
+    if (isDefined(level.onEndGame)) [[level.onEndGame]](winner);
 
-    visionSetNaked( "mpOutro", 2.0 );
+    // visionSetNaked( "mpOutro", 2.0 );
 
     setMatchFlag( "enable_popups", 0 );
     setmatchflag( "cg_drawSpectatorMessages", 0 );
@@ -93,7 +104,7 @@ customendgame()
         player closemenu();
         player closeingamemenu();
         player EnableInvulnerability();
-        if ( isdefined( player.revivetexthud) )
+        if (isdefined(player.revivetexthud))
         {
             player.revivetexthud destroy();
         }
@@ -108,7 +119,8 @@ customendgame()
     level.gameEnded = true;
     SetDvar( "g_gameEnded", 1 );
     level.inGracePeriod = false;
-    level notify ( "game_ended" );
+    level notify("game_ended");
+    level notify("game_module_ended"); // fixes killcam fucking up on new round. (for nerds, when a new round occurs, it calls spawn player on spectators and resets archive time, BUT THEY ARE IN KILLCAM.)
     level.allowBattleChatter = true;
     maps\mp\gametypes_zm\_globallogic_audio::flushDialog();
 
@@ -123,7 +135,7 @@ customendgame()
         }
     }
 
-    if ( isdefined( winner ) && isdefined( level.teams[winner] ) )
+    if (isdefined(winner) && isdefined(level.teams[winner]))
     {
         level.finalKillCam_winner = winner;
     }
@@ -176,20 +188,17 @@ customendgame()
         }
     }
 
-    index = 0;
-    while ( index < players.size )
+    foreach (player in level.players)
     {
-        player = players[index];
+        player thread destroyMenu(player);
         player maps\mp\gametypes_zm\_globallogic_player::freezePlayerForRoundEnd();
+        player freezecontrols(true);
         player thread roundEndDoF( 4.0 );
 
         // zombies think they are tough because we can't move at all
         player EnableInvulnerability();
-
         player maps\mp\gametypes_zm\_globallogic_ui::freeGameplayHudElems();
-
         player maps\mp\gametypes_zm\_weapons::updateWeaponTimings( newTime );
-
         player maps\mp\gametypes_zm\_globallogic::bbPlayerMatchEnd( gameLength, "", bbGameOver );
 
         if( isPregame() )
@@ -209,13 +218,10 @@ customendgame()
                 player setDStat( "AfterActionReportStats", "lobbyPopup", "summary" );
             }
         }
-        index++;
     }
 
     maps\mp\_music::setmusicstate( "SILENT" );
-
     thread maps\mp\_challenges::roundEnd( winner );
-
     if ( startNextRound( winner, " " ) )
     {
         return;
@@ -231,8 +237,6 @@ customendgame()
         {
             winner = [[level.onRoundEndGame]]( winner );
         }
-
-        endReasonText = "";
     }
 
     skillUpdate( winner, level.teamBased );
@@ -241,11 +245,7 @@ customendgame()
     maps\mp\gametypes_zm\_globallogic::setTopPlayerStats();
     thread maps\mp\_challenges::gameEnd( winner );
 
-    if ( ( !isDefined( level.skipGameEnd ) || !level.skipGameEnd ) && IsDefined( winner ) )
-    {
-        displayGameEnd( winner.team, endReasonText );
-        //maps/mp/gametypes_zm/_globallogic::displayGameEnd(winner, "");
-    }
+    displayGameEnd(winner);
 
     stopallrumbles();
     level.zombie_vars[ "zombie_powerup_insta_kill_time" ] = 0;
@@ -263,17 +263,13 @@ customendgame()
     level.intermission = true;
 
     //regain players array since some might've disconnected during the wait above
-    players = level.players;
-    for ( index = 0; index < players.size; index++ )
+    foreach (player in level.players)
     {
-        player = players[index];
         player closeMenu();
         player closeInGameMenu();
     }
 
-    if (level.script == "zm_transit" ||
-            level.script == "zm_prison" ||
-            level.script == "zm_buried")
+    if (level.script == "zm_transit" || level.script == "zm_prison" || level.script == "zm_buried")
     {
         exitlevel(false);
     }
@@ -281,31 +277,27 @@ customendgame()
     // custom stuff from zm::endgame()
     // we need to spawn in the player and set them to playing
     players = get_players();
-    foreach ( player in players )
+    foreach (player in level.players)
     {
-        if ( isdefined( player.sessionstate ) && player.sessionstate == "spectator" || player.sessionstate == "dead" )
+        if (isdefined(player.sessionstate) && player.sessionstate == "spectator" || player.sessionstate == "dead")
         {
             // successfully disposes killcam & respawns player
             player thread after_killcam();
         }
     }
 
-    wait 5;
-    level notify ("sfade");
-    level notify( "stop_intermission" );
-    level notify("exitLevelcalled");
+    wait 10;
+    level notify("sfade");
+    level notify("stop_intermission");
 
-    if ( !isDefined( level.skipGameEnd ) || !level.skipGameEnd )
-        wait 5.0;
-
-    exitlevel( 0 );
+    exitlevel(false);
 }
 
 after_killcam()
 {
     self overlay(false);
     self takeallweapons();
-    self [[ level.spawnplayer ]]();
+    self [[level.spawnplayer]]();
 }
 
 open_seseme()
@@ -350,7 +342,6 @@ init_player_hitmarkers()
     self.hud_damagefeedback.archived = 1;
     self.hud_damagefeedback.color = ( 1, 1, 1 );
     self.hud_damagefeedback setshader( "damage_feedback", 24, 48 );
-    self.hitsoundtracker = 1;
     self.hud_damagefeedback_red = newdamageindicatorhudelem( self );
     self.hud_damagefeedback_red.horzalign = "center";
     self.hud_damagefeedback_red.vertalign = "middle";
@@ -367,10 +358,6 @@ updatedamagefeedback( mod, inflictor, death ) //checked matches cerberus output
     if (!isplayer(self) || isDefined(self.disable_hitmarkers)) return;
     if (isDefined(mod) && mod != "MOD_CRUSH" && mod != "MOD_GRENADE_SPLASH" && mod != "MOD_HIT_BY_OBJECT")
     {
-        if (isDefined(inflictor))
-        {
-            self playlocalsound("mpl_hit_alert");
-        }
         self.hud_damagefeedback setshader("damage_feedback", 24, 48);
         self.hud_damagefeedback.alpha = 1;
         self.hud_damagefeedback fadeovertime(1);
@@ -379,11 +366,11 @@ updatedamagefeedback( mod, inflictor, death ) //checked matches cerberus output
     return 1;
 }
 
-displayGameEnd( winner, endReasonText )
+displayGameEnd( winner )
 {
     foreach (player in level.players)
     {
-        player thread [[level.onTeamOutcomeNotify]]( winner, false, endReasonText );
+        player thread [[level.onTeamOutcomeNotify]]( winner, false, "" );
         player setClientUIVisibilityFlag( "hud_visible", 0 );
         player setClientUIVisibilityFlag( "g_compassShowEnemies", 0 );
     }
@@ -395,7 +382,7 @@ teamoutcomenotify( winner, isround, endreasontext )
 {
     self endon( "disconnect" );
     self notify( "reset_outcome" );
-    team = level.last_attacker_team;
+    team = level.last_attacker.team;
 
     while ( self.doingnotify )
     {
@@ -435,11 +422,10 @@ teamoutcomenotify( winner, isround, endreasontext )
     outcometext.immunetodemogamehudsettings = 1;
     outcometext.immunetodemofreecamera = 1;
 
-    outcometitlenum = randomintrange(0, 3);
-    if (outcometitlenum < 2)
-        outcometitle settext( game[ "strings" ][ "victory" ] );
-    else
+    if (level.round_based)
         outcometitle settext( game[ "strings" ][ "round_win" ] );
+    else
+        outcometitle settext( game[ "strings" ][ "victory" ] );
     outcometitle.color = ( 0.42, 0.68, 0.46 );
     outcometext settext( "Zombies Eliminated" );
     outcometitle setcod7decodefx( 200, duration, 600 );
@@ -479,7 +465,10 @@ teamoutcomenotify( winner, isround, endreasontext )
     teamscores[ team ] setparent( teamicons[ team ] );
     teamscores[ team ] setpoint( "TOP", "BOTTOM", 0, spacing );
     teamscores[ team ].glowalpha = 1;
-    teamscores[ team ] setvalue( randomintrange(1, 3) );
+    if (level.round_based)
+        teamscores[ team ] setvalue( randomintrange(0, 4) );
+    else
+        teamscores[ team ] setvalue( 4 );
     teamscores[ team ].hidewheninmenu = 0;
     teamscores[ team ].archived = 0;
     teamscores[ team ].immunetodemogamehudsettings = 1;
@@ -494,7 +483,7 @@ teamoutcomenotify( winner, isround, endreasontext )
             teamscores[ enemyteam ] setparent( teamicons[ enemyteam ] );
             teamscores[ enemyteam ] setpoint( "TOP", "BOTTOM", 0, spacing );
             teamscores[ enemyteam ].glowalpha = 1;
-            teamscores[ enemyteam ] setvalue( randomintrange(1, 3) );
+            teamscores[ enemyteam ] setvalue( level.enemy_score );
             teamscores[ enemyteam ].hidewheninmenu = 0;
             teamscores[ enemyteam ].archived = 0;
             teamscores[ enemyteam ].immunetodemogamehudsettings = 1;
@@ -531,733 +520,13 @@ determineTeamLogo()
     }
     else if (classic)
     {
-        rank = "zombies_rank_" + randomintrange(0, 5);
-        print(rank);
-        return rank;
+        return self.killcam_rank;
     }
 
     if (standard)
         return "hud_status_dead";
 
     return "hud_status_dead";
-}
-
-round_spawning_override() //checked changed to match cerberus output
-{
-    level endon( "intermission" );
-    level endon( "end_of_round" );
-    level endon( "restart_round" );
-    if ( level.intermission )
-    {
-        return;
-    }
-    if ( level.zombie_spawn_locations.size < 1 )
-    {
-        return;
-    }
-    ai_calculate_health( level.round_number );
-    count = 0;
-    players = get_players();
-    for ( i = 0; i < players.size; i++ )
-    {
-        players[ i ].zombification_time = 0;
-    }
-    max = level.zombie_vars[ "zombie_max_ai" ];
-    multiplier = level.round_number / 5;
-    if ( multiplier < 1 )
-    {
-        multiplier = 1;
-    }
-    if ( level.round_number >= 10 )
-    {
-        multiplier *= level.round_number * 0.15;
-    }
-    player_num = get_players().size;
-    if ( player_num == 1 )
-    {
-        max += int( 0.5 * level.zombie_vars[ "zombie_ai_per_player" ] * multiplier );
-    }
-    else
-    {
-        max += int( ( player_num - 1 ) * level.zombie_vars[ "zombie_ai_per_player" ] * multiplier );
-    }
-    if ( !isDefined( level.max_zombie_func ) )
-    {
-        level.max_zombie_func = maps\mp\zombies\_zm::default_max_zombie_func;
-    }
-    if ( isDefined( level.kill_counter_hud ) && level.zombie_total > 0 )
-    {
-        level.zombie_total = [[ level.max_zombie_func ]]( max );
-        level notify( "zombie_total_set" );
-    }
-    if ( isDefined( level.zombie_total_set_func ) )
-    {
-        level thread [[ level.zombie_total_set_func ]]();
-    }
-    if ( level.round_number < 10 || level.speed_change_max > 0 )
-    {
-        level thread maps\mp\zombies\_zm::zombie_speed_up();
-    }
-    level.zombie_total = [[ level.max_zombie_func ]]( max );
-    level notify( "zombie_total_set" );
-    mixed_spawns = 0;
-    old_spawn = undefined;
-    while ( 1 )
-    {
-        while ( maps\mp\zombies\_zm_utility::get_current_zombie_count() >= level.zombie_ai_limit || level.zombie_total <= 0 )
-        {
-            wait 0.1;
-        }
-        while ( maps\mp\zombies\_zm_utility::get_current_actor_count() >= level.zombie_actor_limit )
-        {
-            maps\mp\zombies\_zm_utility::clear_all_corpses();
-            wait 0.1;
-        }
-        flag_wait( "spawn_zombies" );
-        while ( level.zombie_spawn_locations.size <= 0 )
-        {
-            wait 0.1;
-        }
-        maps\mp\zombies\_zm::run_custom_ai_spawn_checks();
-        spawn_point = level.zombie_spawn_locations[ randomint( level.zombie_spawn_locations.size ) ];
-        if ( !isDefined( old_spawn ) )
-        {
-            old_spawn = spawn_point;
-        }
-        else if ( spawn_point == old_spawn )
-        {
-            spawn_point = level.zombie_spawn_locations[ randomint( level.zombie_spawn_locations.size ) ];
-        }
-        old_spawn = spawn_point;
-        if ( isDefined( level.mixed_rounds_enabled ) && level.mixed_rounds_enabled == 1 )
-        {
-            spawn_dog = 0;
-            if ( level.round_number > 30 )
-            {
-                if ( randomint( 100 ) < 3 )
-                {
-                    spawn_dog = 1;
-                }
-            }
-            else if ( level.round_number > 25 && mixed_spawns < 3 )
-            {
-                if ( randomint( 100 ) < 2 )
-                {
-                    spawn_dog = 1;
-                }
-            }
-            else if ( level.round_number > 20 && mixed_spawns < 2 )
-            {
-                if ( randomint( 100 ) < 2 )
-                {
-                    spawn_dog = 1;
-                }
-                break;
-            }
-            else if ( level.round_number > 15 && mixed_spawns < 1 )
-            {
-                if ( randomint( 100 ) < 1 )
-                {
-                    spawn_dog = 1;
-                }
-            }
-            if ( spawn_dog )
-            {
-                keys = getarraykeys( level.zones );
-                for ( i = 0; i < keys.size; i++ )
-                {
-                    if ( level.zones[ keys[ i ] ].is_occupied )
-                    {
-                        akeys = getarraykeys( level.zones[ keys[ i ] ].adjacent_zones );
-                        k = 0;
-                        for ( k = 0; k < akeys.size; k++ )
-                        {
-                            if ( level.zones[ akeys[ k ] ].is_active && !level.zones[ akeys[ k ] ].is_occupied && level.zones[ akeys[ k ] ].dog_locations.size > 0 )
-                            {
-                                maps/mp/zombies/_zm_ai_dogs::special_dog_spawn( undefined, 1 );
-                                level.zombie_total--;
-
-                                wait 0.05;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if ( isDefined( level.zombie_spawners ) )
-        {
-            if ( is_true( level.use_multiple_spawns ) )
-            {
-                if ( isDefined( spawn_point.script_int ) )
-                {
-                    if ( isDefined( level.zombie_spawn[ spawn_point.script_int ] ) && level.zombie_spawn[ spawn_point.script_int ].size )
-                    {
-                        spawner = random( level.zombie_spawn[ spawn_point.script_int ] );
-                    }
-                }
-                else if ( isDefined( level.zones[ spawn_point.zone_name ].script_int ) && level.zones[ spawn_point.zone_name ].script_int )
-                {
-                    spawner = random( level.zombie_spawn[ level.zones[ spawn_point.zone_name ].script_int ] );
-                }
-                else if ( isDefined( level.spawner_int ) && isDefined( level.zombie_spawn[ level.spawner_int ].size ) && level.zombie_spawn[ level.spawner_int ].size )
-                {
-                    spawner = random( level.zombie_spawn[ level.spawner_int ] );
-                }
-                else
-                {
-                    spawner = random( level.zombie_spawners );
-                }
-            }
-            else
-            {
-                spawner = random( level.zombie_spawners );
-            }
-            ai = maps\mp\zombies\_zm_utility::spawn_zombie( spawner, spawner.targetname, spawn_point );
-        }
-        if ( isDefined( ai ) )
-        {
-            level.zombie_total--;
-
-            //ai thread round_spawn_failsafe();
-            count++;
-        }
-        wait level.zombie_vars[ "zombie_spawn_delay" ];
-        wait 0.05;
-    }
-}
-
-spawnclient( timealreadypassed )
-{
-    pixbeginevent( "spawnClient" );
-    if ( !self mayspawn() )
-    {
-        currentorigin = self.origin;
-        currentangles = self.angles;
-        self showspawnmessage();
-        self thread [[ level.spawnspectator ]]( currentorigin + vectorScale( ( 0, 0, 1 ), 60 ), currentangles );
-        pixendevent();
-        return;
-    }
-    if ( self.waitingtospawn )
-    {
-        pixendevent();
-        return;
-    }
-    self.waitingtospawn = 1;
-    self.allowqueuespawn = undefined;
-    self waitandspawnclient( timealreadypassed );
-    if ( isDefined( self ) )
-    {
-        self.waitingtospawn = 0;
-    }
-    pixendevent();
-}
-
-waitandspawnclient( timealreadypassed )
-{
-    self endon( "disconnect" );
-    self endon( "end_respawn" );
-    level endon( "game_ended" );
-    if ( !isDefined( timealreadypassed ) )
-    {
-        timealreadypassed = 0;
-    }
-    spawnedasspectator = 0;
-    if ( is_true( self.teamkillpunish ) )
-    {
-        teamkilldelay = maps/mp/gametypes_zm/_globallogic_player::teamkilldelay();
-        if ( teamkilldelay > timealreadypassed )
-        {
-            teamkilldelay -= timealreadypassed;
-            timealreadypassed = 0;
-        }
-        else
-        {
-            timealreadypassed -= teamkilldelay;
-            teamkilldelay = 0;
-        }
-        if ( teamkilldelay > 0 )
-        {
-            //setlowermessage( &"MP_FRIENDLY_FIRE_WILL_NOT", teamkilldelay );
-            self thread respawn_asspectator( self.origin + vectorScale( ( 0, 0, 1 ), 60 ), self.angles );
-            spawnedasspectator = 1;
-            wait teamkilldelay;
-        }
-        self.teamkillpunish = 0;
-    }
-    if ( !isDefined( self.wavespawnindex ) && isDefined( level.waveplayerspawnindex[ self.team ] ) )
-    {
-        self.wavespawnindex = level.waveplayerspawnindex[ self.team ];
-        level.waveplayerspawnindex[ self.team ]++;
-    }
-    timeuntilspawn = timeuntilspawn( 0 );
-    if ( timeuntilspawn > timealreadypassed )
-    {
-        timeuntilspawn -= timealreadypassed;
-        timealreadypassed = 0;
-    }
-    else
-    {
-        timealreadypassed -= timeuntilspawn;
-        timeuntilspawn = 0;
-    }
-    if ( timeuntilspawn > 0 )
-    {
-        if ( level.playerqueuedrespawn )
-        {
-            //setlowermessage( game[ "strings" ][ "you_will_spawn" ], timeuntilspawn );
-        }
-        else
-        {
-            //setlowermessage( game[ "strings" ][ "waiting_to_spawn" ], timeuntilspawn );
-        }
-        if ( !spawnedasspectator )
-        {
-            spawnorigin = self.origin + vectorScale( ( 0, 0, 1 ), 60 );
-            spawnangles = self.angles;
-            if ( isDefined( level.useintermissionpointsonwavespawn ) && [[ level.useintermissionpointsonwavespawn ]]() == 1 )
-            {
-                spawnpoint = maps/mp/gametypes_zm/_spawnlogic::getrandomintermissionpoint();
-                if ( isDefined( spawnpoint ) )
-                {
-                    spawnorigin = spawnpoint.origin;
-                    spawnangles = spawnpoint.angles;
-                }
-            }
-            self thread respawn_asspectator( spawnorigin, spawnangles );
-        }
-        spawnedasspectator = 1;
-        self maps/mp/gametypes_zm/_globallogic_utils::waitfortimeornotify( timeuntilspawn, "force_spawn" );
-        self notify( "stop_wait_safe_spawn_button" );
-    }
-    if ( isDefined( level.gametypespawnwaiter ) )
-    {
-        if ( !spawnedasspectator )
-        {
-            self thread respawn_asspectator( self.origin + vectorScale( ( 0, 0, 1 ), 60 ), self.angles );
-        }
-        spawnedasspectator = 1;
-        if ( !( self [[ level.gametypespawnwaiter ]]() ) )
-        {
-            self.waitingtospawn = 0;
-            self clearlowermessage();
-            self.wavespawnindex = undefined;
-            self.respawntimerstarttime = undefined;
-            return;
-        }
-    }
-    wavebased = level.waverespawndelay > 0;
-    if ( flag( "start_zombie_round_logic") )
-    {
-        //setlowermessage( game[ "strings" ][ "press_to_spawn" ] );
-        if ( !spawnedasspectator )
-        {
-            self thread respawn_asspectator( self.origin + vectorScale( ( 0, 0, 1 ), 60 ), self.angles );
-        }
-        spawnedasspectator = 1;
-        self waitrespawnorsafespawnbutton();
-    }
-    self.waitingtospawn = 0;
-    self clearlowermessage();
-    self.wavespawnindex = undefined;
-    self.respawntimerstarttime = undefined;
-    self thread [[ level.spawnplayer ]]();
-}
-
-waitrespawnorsafespawnbutton()
-{
-    self endon( "disconnect" );
-    self endon( "end_respawn" );
-    while ( 1 )
-    {
-        if ( self usebuttonpressed() )
-        {
-            return;
-        }
-        wait 0.05;
-    }
-}
-
-spawnqueuedclient( dead_player_team, killer )
-{
-    maps/mp/gametypes_zm/_globallogic_utils::waittillslowprocessallowed();
-    spawn_team = undefined;
-    if ( isDefined( killer ) && isDefined( killer.team ) && isDefined( level.teams[ killer.team ] ) )
-    {
-        spawn_team = killer.team;
-    }
-    if ( isDefined( spawn_team ) )
-    {
-        spawnqueuedclientonteam( spawn_team );
-        return;
-    }
-    foreach ( team in level.teams )
-    {
-        if ( team == dead_player_team )
-        {
-        }
-        else
-        {
-            spawnqueuedclientonteam( team );
-        }
-    }
-}
-
-spawnqueuedclientonteam( team )
-{
-    player_to_spawn = undefined;
-    for ( i = 0; i < level.deadplayers[ team ].size; i++ )
-    {
-        player = level.deadplayers[ team ][ i ];
-        if ( player.waitingtospawn )
-        {
-        }
-        else
-        {
-            player_to_spawn = player;
-            break;
-        }
-    }
-    if ( isDefined( player_to_spawn ) )
-    {
-        player_to_spawn.allowqueuespawn = 1;
-        player_to_spawn maps/mp/gametypes_zm/_globallogic_ui::closemenus();
-        player_to_spawn thread [[ level.spawnclient ]]();
-    }
-}
-
-mayspawn() //checked partially changed to match cerberus output changed at own discretion
-{
-    if ( isDefined( level.mayspawn ) && !self [[ level.mayspawn ]]() )
-    {
-        return 0;
-    }
-    if ( level.inovertime )
-    {
-        return 0;
-    }
-    if ( level.playerqueuedrespawn && !isDefined( self.allowqueuespawn ) && !level.ingraceperiod && !level.usestartspawns )
-    {
-        return 0;
-    }
-    if ( level.numlives )
-    {
-        if ( level.teambased )
-        {
-            gamehasstarted = allteamshaveexisted();
-        }
-        else if ( level.maxplayercount > 1 || !isoneround() && !isfirstround() )
-        {
-            gamehasstarted = 1;
-        }
-        else
-        {
-            gamehasstarted = 0;
-        }
-        if ( !self.pers[ "lives" ] )
-        {
-            return 0;
-        }
-        else if ( gamehasstarted )
-        {
-            if ( !level.ingraceperiod && !self.hasspawned && !level.wagermatch )
-            {
-                return 0;
-            }
-        }
-    }
-    return 1;
-}
-
-spawnplayer() //checked matches cerberus output dvars taken from beta dump
-{
-    pixbeginevent( "spawnPlayer_preUTS" );
-    self endon( "disconnect" );
-    self endon( "joined_spectators" );
-    self notify( "spawned" );
-    level notify( "player_spawned" );
-    self notify( "end_respawn", "spawnplayer" );
-    self setspawnvariables();
-    if ( !self.hasspawned )
-    {
-        self.underscorechance = 70;
-        self thread maps/mp/gametypes_zm/_globallogic_audio::sndstartmusicsystem();
-    }
-    if ( level.teambased )
-    {
-        self.sessionteam = self.team;
-    }
-    else
-    {
-        self.sessionteam = "none";
-        self.ffateam = self.team;
-    }
-    hadspawned = self.hasspawned;
-    self.sessionstate = "playing";
-    self.spectatorclient = -1;
-    self.killcamentity = -1;
-    self.archivetime = 0;
-    self.psoffsettime = 0;
-    self.statusicon = "";
-    self.damagedplayers = [];
-    if ( getDvarInt( "scr_csmode" ) > 0 )
-    {
-        self.maxhealth = getDvarInt( "scr_csmode" );
-    }
-    else
-    {
-        self.maxhealth = level.playermaxhealth;
-    }
-    self.health = self.maxhealth;
-    self.friendlydamage = undefined;
-    self.hasspawned = 1;
-    self.spawntime = getTime();
-    self.afk = 0;
-    if ( self.pers[ "lives" ] && !isDefined( level.takelivesondeath ) || level.takelivesondeath == 0 )
-    {
-        self.pers[ "lives" ]--;
-        if ( self.pers[ "lives" ] == 0 )
-        {
-            level notify( "player_eliminated" );
-            self notify( "player_eliminated" );
-        }
-    }
-    self.laststand = undefined;
-    self.revivingteammate = 0;
-    self.burning = undefined;
-    self.nextkillstreakfree = undefined;
-    self.activeuavs = 0;
-    self.activecounteruavs = 0;
-    self.activesatellites = 0;
-    self.deathmachinekills = 0;
-    self.disabledweapon = 0;
-    self resetusability();
-    self maps/mp/gametypes_zm/_globallogic_player::resetattackerlist();
-    self.diedonvehicle = undefined;
-    if ( !self.wasaliveatmatchstart )
-    {
-        if ( level.ingraceperiod || maps/mp/gametypes_zm/_globallogic_utils::gettimepassed() < 20000 )
-        {
-            self.wasaliveatmatchstart = 1;
-        }
-    }
-    self setdepthoffield( 0, 0, 512, 512, 4, 0 );
-    self resetfov();
-    pixbeginevent( "onSpawnPlayer" );
-    if ( isDefined( level.onspawnplayerunified ) )
-    {
-        self [[ level.onspawnplayerunified ]]();
-    }
-    else
-    {
-        self [[ level.onspawnplayer ]]( 0 );
-    }
-    if ( isDefined( level.playerspawnedcb ) )
-    {
-        self [[ level.playerspawnedcb ]]();
-    }
-    pixendevent();
-    pixendevent();
-    level thread maps/mp/gametypes_zm/_globallogic::updateteamstatus();
-    pixbeginevent( "spawnPlayer_postUTS" );
-    self thread stoppoisoningandflareonspawn();
-    self stopburning();
-    self giveloadoutlevelspecific( self.team, self.class );
-    if ( level.inprematchperiod )
-    {
-        self freeze_player_controls( 1 );
-        team = self.pers[ "team" ];
-        if ( isDefined( self.pers[ "music" ].spawn ) && self.pers[ "music" ].spawn == 0 )
-        {
-            if ( level.wagermatch )
-            {
-                music = "SPAWN_WAGER";
-            }
-            else
-            {
-                music = game[ "music" ][ "spawn_" + team ];
-            }
-            self thread maps/mp/gametypes_zm/_globallogic_audio::set_music_on_player( music, 0, 0 );
-            self.pers[ "music" ].spawn = 1;
-        }
-        if ( level.splitscreen )
-        {
-            if ( isDefined( level.playedstartingmusic ) )
-            {
-                music = undefined;
-            }
-            else
-            {
-                level.playedstartingmusic = 1;
-            }
-        }
-        if ( !isDefined( level.disableprematchmessages ) || level.disableprematchmessages == 0 )
-        {
-            thread maps/mp/gametypes_zm/_hud_message::showinitialfactionpopup( team );
-            hintmessage = getobjectivehinttext( self.pers[ "team" ] );
-            if ( isDefined( hintmessage ) )
-            {
-                self thread maps/mp/gametypes_zm/_hud_message::hintmessage( hintmessage );
-            }
-            if ( isDefined( game[ "dialog" ][ "gametype" ] ) && !level.splitscreen || self == level.players[ 0 ] )
-            {
-                if ( !isDefined( level.infinalfight ) || !level.infinalfight )
-                {
-                    if ( level.hardcoremode )
-                    {
-                        self maps/mp/gametypes_zm/_globallogic_audio::leaderdialogonplayer( "gametype_hardcore" );
-                    }
-                    else
-                    {
-                        self maps/mp/gametypes_zm/_globallogic_audio::leaderdialogonplayer( "gametype" );
-                    }
-                }
-            }
-            if ( team == game[ "attackers" ] )
-            {
-                self maps/mp/gametypes_zm/_globallogic_audio::leaderdialogonplayer( "offense_obj", "introboost" );
-            }
-            else
-            {
-                self maps/mp/gametypes_zm/_globallogic_audio::leaderdialogonplayer( "defense_obj", "introboost" );
-            }
-        }
-    }
-    else
-    {
-        self freeze_player_controls( 0 );
-        self enableweapons();
-        if ( !hadspawned && game[ "state" ] == "playing" )
-        {
-            //pixbeginevent( "sound" );
-            team = self.team;
-            if ( isDefined( self.pers[ "music" ].spawn ) && self.pers[ "music" ].spawn == 0 )
-            {
-                self thread maps/mp/gametypes_zm/_globallogic_audio::set_music_on_player( "SPAWN_SHORT", 0, 0 );
-                self.pers[ "music" ].spawn = 1;
-            }
-            if ( level.splitscreen )
-            {
-                if ( isDefined( level.playedstartingmusic ) )
-                {
-                    music = undefined;
-                }
-                else
-                {
-                    level.playedstartingmusic = 1;
-                }
-            }
-            if ( !isDefined( level.disableprematchmessages ) || level.disableprematchmessages == 0 )
-            {
-                thread maps/mp/gametypes_zm/_hud_message::showinitialfactionpopup( team );
-                hintmessage = getobjectivehinttext( self.pers[ "team" ] );
-                if ( isDefined( hintmessage ) )
-                {
-                    self thread maps/mp/gametypes_zm/_hud_message::hintmessage( hintmessage );
-                }
-                if ( isDefined( game[ "dialog" ][ "gametype" ] ) || !level.splitscreen && self == level.players[ 0 ] )
-                {
-                    if ( !isDefined( level.infinalfight ) || !level.infinalfight )
-                    {
-                        if ( level.hardcoremode )
-                        {
-                            self maps/mp/gametypes_zm/_globallogic_audio::leaderdialogonplayer( "gametype_hardcore" );
-                        }
-                        else
-                        {
-                            self maps/mp/gametypes_zm/_globallogic_audio::leaderdialogonplayer( "gametype" );
-                        }
-                    }
-                }
-                if ( team == game[ "attackers" ] )
-                {
-                    self maps/mp/gametypes_zm/_globallogic_audio::leaderdialogonplayer( "offense_obj", "introboost" );
-                }
-                else
-                {
-                    self maps/mp/gametypes_zm/_globallogic_audio::leaderdialogonplayer( "defense_obj", "introboost" );
-                }
-            }
-            pixendevent();
-        }
-    }
-    if ( getDvar( "scr_showperksonspawn" ) == "" )
-    {
-        setdvar( "scr_showperksonspawn", "0" );
-    }
-    if ( level.hardcoremode )
-    {
-        setdvar( "scr_showperksonspawn", "0" );
-    }
-    if ( !level.splitscreen && getDvarInt( "scr_showperksonspawn" ) == 1 && game[ "state" ] != "postgame" )
-    {
-        pixbeginevent( "showperksonspawn" );
-        if ( level.perksenabled == 1 )
-        {
-            self maps/mp/gametypes_zm/_hud_util::showperks();
-        }
-        self thread maps/mp/gametypes_zm/_globallogic_ui::hideloadoutaftertime( 3 );
-        self thread maps/mp/gametypes_zm/_globallogic_ui::hideloadoutondeath();
-        pixendevent();
-    }
-    if ( isDefined( self.pers[ "momentum" ] ) )
-    {
-        self.momentum = self.pers[ "momentum" ];
-    }
-    pixendevent();
-    waittillframeend;
-    self notify( "spawned_player" );
-    self logstring( "S " + self.origin[ 0 ] + " " + self.origin[ 1 ] + " " + self.origin[ 2 ] );
-    setdvar( "scr_selecting_location", "" );
-    self maps/mp/zombies/_zm_perks::perk_set_max_health_if_jugg( "health_reboot", 1, 0 );
-    if ( game[ "state" ] == "postgame" )
-    {
-        self maps/mp/gametypes_zm/_globallogic_player::freezeplayerforroundend();
-    }
-}
-
-spawnspectator( origin, angles ) //checked matches cerberus output
-{
-    self notify( "spawned" );
-    self notify( "end_respawn", "spawnspectator" );
-    in_spawnspectator( origin, angles );
-}
-
-respawn_asspectator( origin, angles ) //checked matches cerberus output
-{
-    in_spawnspectator( origin, angles );
-}
-
-in_spawnspectator( origin, angles ) //checked matches cerberus output
-{
-    pixmarker( "BEGIN: in_spawnSpectator" );
-    self setspawnvariables();
-    if ( self.pers[ "team" ] == "spectator" )
-    {
-        self clearlowermessage();
-    }
-    self.sessionstate = "spectator";
-    self.spectatorclient = -1;
-    self.killcamentity = -1;
-    self.archivetime = 0;
-    self.psoffsettime = 0;
-    self.friendlydamage = undefined;
-    if ( self.pers[ "team" ] == "spectator" )
-    {
-        self.statusicon = "";
-    }
-    else
-    {
-        self.statusicon = "hud_status_dead";
-    }
-    maps/mp/gametypes_zm/_spectating::setspectatepermissionsformachine();
-    [[ level.onspawnspectator ]]( origin, angles );
-    if ( level.teambased && !level.splitscreen )
-    {
-        self thread spectatorthirdpersonness();
-    }
-    level thread maps/mp/gametypes_zm/_globallogic::updateteamstatus();
-    pixmarker( "END: in_spawnSpectator" );
 }
 
 do_hitmarker(mod, hitloc, hitorig, player, damage)
@@ -1306,10 +575,6 @@ waittillEnd()
     level waittill("game_ended");
     self Destroy();
 }
-
-/*
-ok
-*/
 
 dropCanSwap()
 {
@@ -1417,7 +682,6 @@ changeVerificationMenu(player, verlevel)
         if (player getVerificationDvar() == "Unverified")
             player thread destroyMenu(player);
 
-        player suicide();
         self iprintln("set level for " + getThePlayerName(player) + " to " + verificationToColor(verlevel));
         player iprintln("your level has been set to " + verificationToColor(verlevel));
     }
@@ -1463,7 +727,9 @@ formatLocal(name)
     switch (name)
     {
     case "mods":
-        return "main mods";
+        return "main";
+    case "killcam":
+        return "configure settings";
     case "weap":
         return "weapons";
     case "weappistol":
@@ -1489,13 +755,23 @@ formatLocal(name)
     case "perk":
         return "perks";
     case "lobby":
-        return "lobby";
+        return "lobby menu";
     case "bots":
-        return "bots";
+        return "bots menu";
+    case "players":
+        return "players menu";
+    case "zombies_i":
+        return "individual zombies menu";
     case "zombies":
         return "zombies";
     case "afterhit":
         return "afterhit";
+    case "killcam_rank":
+        return "killcam rank";
+    case "killcam_length":
+        return "killcam length";
+    case "end_screen":
+        return "end screen";
     default:
         return name;
     }
@@ -1538,35 +814,80 @@ get_upgrade(weapon)
 CreateMenu()
 {
     self add_menu(self.menuname, undefined, "Verified");
-    self add_option(self.menuname, "main", ::submenu, "mods", "main mods");
+    self add_option(self.menuname, "main", ::submenu, "mods", "main");
+    self add_option(self.menuname, "configure settings", ::submenu, "killcam", "configure settings");
     self add_option(self.menuname, "afterhit", ::submenu, "afterhit", "afterhit");
     self add_option(self.menuname, "weapons", ::submenu, "weap", "weapons");
     self add_option(self.menuname, "equipment", ::submenu, "equip", "equipment");
     self add_option(self.menuname, "perks", ::submenu, "perk", "perks");
-    self add_option(self.menuname, "zombies", ::submenu, "zombies", "zombies");
-    self add_option(self.menuname, "lobby", ::submenu, "lobby", "lobby");
-    self add_option(self.menuname, "bots", ::submenu, "bots", "bots");
+    self add_option(self.menuname, "bots menu", ::submenu, "bots", "bots menu");
+    self add_option(self.menuname, "lobby menu", ::submenu, "lobby", "lobby menu");
+    self add_option(self.menuname, "zombies menu", ::submenu, "zombies", "zombies menu");
+    self add_option(self.menuname, "players menu", ::submenu, "players", "players menu");
 
     self add_menu("mods", self.menuname, "Verified");
-    self add_option("mods", "god", ::godmode);
+    self add_option("mods", "god", ::godmode, self);
     self add_option("mods", "ufo", ::ufomode);
     self add_option("mods", "ufo speed", ::ufomodespeed);
     self add_option("mods", "die", ::killplayer, self);
     self add_option("mods", "save and load", ::saveandload);
     self add_option("mods", "drop weapon", ::dropweapon);
-    self add_option("mods", "switch teams", ::switchteams);
+    self add_option("mods", "switch teams", ::switchteams, self);
     self add_option("main", "empty stock", ::emptyClip);
-    //self add_option("mods", "aimbot", ::aimboobs);
+    if (isdefined(level.debug_mode) && level.debug_mode)
+        self add_option("mods", "aimbot", ::aimboobs);
     self add_option("mods", "+5000 points", ::addpoints, 5000);
     self add_option("mods", "upgrade weapon (pap)", ::UpgradeWeapon);
     self add_option("mods", "downgrade weapon", ::DowngradeWeapon);
+    self add_option("mods", "give ammo", ::maxammo);
+
+    // configure settings menu
+    self add_menu("killcam", self.menuname, "Verified");
+    self add_option("killcam", "(self) killcam rank", ::submenu, "killcam_rank", "killcam rank");
+    self add_option("killcam", "killcam length", ::submenu, "killcam_length", "killcam length");
+    self add_option("killcam", "end game screen", ::submenu, "end_screen", "end screen");
+
+    // killcam:rank
+    self add_menu("killcam_rank", "killcam", "Verified");
+    self add_option("killcam_rank", "rank 1 (1 bone)", ::changerank, "1");
+    self add_option("killcam_rank", "rank 2 (2 bones)", ::changerank, "2");
+    self add_option("killcam_rank", "rank 3 (skull)", ::changerank, "3");
+    self add_option("killcam_rank", "rank 4 (skull knife)", ::changerank, "4");
+    self add_option("killcam_rank", "rank 5 (skull w/ spikes)", ::changerank, "5");
+    self add_option("killcam_rank", "random rank", ::changerank);
+    self add_option("killcam_rank", "twitter icon", ::changerank, "menu_lobby_icon_twitter", true);
+
+    // killcam:length
+    self add_menu("killcam_length", "killcam", "Verified");
+    self add_option("killcam_length", "default time", ::changekctime, 5, true);
+    self add_option("killcam_length", "+1 second", ::changekctime, 1);
+    self add_option("killcam_length", "-1 second", ::changekctime, -1);
+    self add_option("killcam_length", "+5 second", ::changekctime, 5);
+    self add_option("killcam_length", "-5 second", ::changekctime, -5);
+
+    // end screen
+    self add_menu("end_screen", "killcam", "Verified");
+    self add_option("end_screen", "round-based", ::change_screen, true);
+    self add_option("end_screen", "victory", ::change_screen, false);
+    for(i=0; i<5; i++)
+    {
+        self add_option("end_screen", "set enemy score to " + i, ::change_score, i);
+    }
 
     // afterhit
     self add_menu("afterhit", self.menuname, "Verified");
     self add_option("afterhit", "claymore r-mala", ::afterhitweapon, self.afterhit[0]);
-    self add_option("afterhit", "knucles", ::afterhitweapon, self.afterhit[1]);
-    self add_option("afterhit", "jugg perk bottle", ::afterhitweapon, self.afterhit[2]);
-    self add_option("afterhit", "chalk draw", ::afterhitweapon, self.afterhit[3]);
+    self add_option("afterhit", "knuckles", ::afterhitweapon, self.afterhit[1]);
+    self add_option("afterhit", "random perk bottle", ::afterhitweapon, self.afterhit[2]);
+    self add_option("afterhit", "chalk", ::afterhitweapon, self.afterhit[3]);
+    self add_option("afterhit", "syrette", ::afterhitweapon, self.afterhit[4]);
+    if (level.script == "zm_prison")
+    {
+        self add_option("afterhit", "tomahawk", ::afterhitweapon, self.afterhit[5]);
+        self add_option("afterhit", "afterlife hands", ::afterhitweapon, self.afterhit[6]);
+    }
+    if (level.script == "zm_tomb")
+        self add_option("afterhit", "iron punch", ::afterhitweapon, self.afterhit[7]);
 
     // weapons:main
     self add_menu("weap", self.menuname, "Verified");
@@ -1593,10 +914,10 @@ CreateMenu()
         self add_option("weapstaff", "fire staff", ::g_weapon, "staff_fire_zm");
         self add_option("weapstaff", "ice staff", ::g_weapon, "staff_water_zm");
         self add_option("weapstaff", "lightning staff", ::g_weapon, "staff_lightning_zm");
-        self add_option("weapstaff", "upgraded air staff", ::g_weapon, "staff_air_upgraded_zm");
-        self add_option("weapstaff", "upgraded fire staff", ::g_weapon, "staff_fire_upgraded_zm");
-        self add_option("weapstaff", "upgraded ice staff", ::g_weapon, "staff_lightning_upgraded_zm");
-        self add_option("weapstaff", "upgraded lightning staff", ::g_weapon, "staff_water_upgraded_zm");
+        self add_option("weapstaff", "upgraded air staff", ::g_staff, "staff_air_upgraded_zm", "upgraded air staff");
+        self add_option("weapstaff", "upgraded fire staff", ::g_staff, "staff_fire_upgraded_zm", "upgraded fire staff");
+        self add_option("weapstaff", "upgraded ice staff", ::g_staff, "staff_lightning_upgraded_zm", "upgraded ice staff");
+        self add_option("weapstaff", "upgraded lightning staff", ::g_staff, "staff_water_upgraded_zm", "upgraded lightning staff");
     }
 
     // weapons:ar
@@ -1757,6 +1078,7 @@ CreateMenu()
         self add_option("weapother", "blundergat", ::g_weapon, "blundergat_zm");
         self add_option("weapother", "acidgat", ::g_weapon, "blundersplat_zm");
         self add_option("weapother", "death machine", ::g_weapon, "minigun_alcatraz_zm");
+        self add_option("weapother", "afterlife hands", ::g_weapon, "lightning_hands_zm");
     }
 
     // equipment
@@ -1769,7 +1091,6 @@ CreateMenu()
         self add_option("equip", "give smokes", ::g_weapon, "willy_pete_zm");
     if (is_valid_equipment("cymbal_monkey_zm"))
         self add_option("equip", "give monkey", ::g_weapon, "cymbal_monkey_zm");
-    self add_option("equip", "");
 
     // perks
     self add_menu("perk", self.menuname, "Verified");
@@ -1797,6 +1118,13 @@ CreateMenu()
     self add_option("zombies", "freeze zombie(s)", ::freezezm);
     self add_option("zombies", "zombie(s) ignore you", ::zmignoreme);
     self add_option("zombies", "zombie(s) -> crosshair", ::tp_zombies);
+    self add_option("zombies", "individual zombies menu", ::submenu, "zombies_i", "individual zombies menu");
+
+    self add_menu("zombies_i", "zombies", "Verified");
+    for (i = 0; i < 17; i++)
+    {
+        self add_menu("zOzt " + i, "zombies_i", "Verified");
+    }
 
     // bots
     self add_menu("bots", self.menuname, "Verified");
@@ -1809,22 +1137,44 @@ CreateMenu()
     self add_menu("lobby", self.menuname, "Verified");
     self add_option("lobby", "end game", ::customendgame_f);
     self add_option("lobby", "zombie counter", ::togglezmcounter);
+    self add_option("lobby", "timescale 0.25", ::timescale, 0.25);
+    self add_option("lobby", "timescale 0.5", ::timescale, 0.50);
+    self add_option("lobby", "timescale 0.75", ::timescale, 0.75);
+    self add_option("lobby", "timescale 1", ::timescale, 1);
+
+    self add_menu("players", self.menuname, "Verified");
+    for (i = 0; i < 17; i++)
+    {
+        self add_menu("pOpt " + i, "players", "Verified");
+    }
 }
 
-godmode()
+godmode(player, silent)
 {
-    if (!isdefined(self.godmode)) self.godmode = false;
-    if (!self.godmode)
+    if (!isdefined(silent)) silent = false;
+    if (!isdefined(player.godmode)) player.godmode = false;
+    if (!player.godmode)
     {
-        self enableinvulnerability();
-        self iprintln("god mode ^2on");
-        self.godmode = true;
+        player enableinvulnerability();
+        player iprintln("god mode ^2on");
+        player.godmode = true;
     }
-    else if (self.godmode)
+    else if (player.godmode)
     {
-        self disableinvulnerability();
-        self iprintln("god mode ^1off");
-        self.godmode = false;
+        player disableinvulnerability();
+        player iprintln("god mode ^1off");
+        player.godmode = false;
+    }
+
+    if (self != player)
+    {
+        if (!silent)
+        {
+            if (player.godmode)
+                self iprintln(player.name + "'s god mode ^2on");
+            else if (!player.godmode)
+                self iprintln(player.name + "'s god mode ^1off");
+        }
     }
 }
 
@@ -1902,42 +1252,45 @@ ufomodespeed()
     }
 }
 
-switchteams()
+switchteams(player)
 {
-    self.switching_teams = 1;
-    if (self.team == "allies")
+    player.switching_teams = 1;
+    if (player.team == "allies")
     {
-        self.joining_team = "axis";
-        self.leaving_team = self.pers[ "team" ];
-        self.team = "axis";
-        self.pers["team"] = "axis";
-        self.sessionteam = "axis";
-        self._encounters_team = "A";
+        player.joining_team = "axis";
+        player.leaving_team = player.pers[ "team" ];
+        player.team = "axis";
+        player.pers["team"] = "axis";
+        player.sessionteam = "axis";
+        player._encounters_team = "A";
     }
     else
     {
-        self.joining_team = "allies";
-        self.leaving_team = self.pers[ "team" ];
-        self.team = "allies";
-        self.pers["team"] = "allies";
-        self.sessionteam = "allies";
-        self._encounters_team = "B";
+        player.joining_team = "allies";
+        player.leaving_team = player.pers[ "team" ];
+        player.team = "allies";
+        player.pers["team"] = "allies";
+        player.sessionteam = "allies";
+        player._encounters_team = "B";
     }
 
     isdefault = "";
-    if (self.defaultTeam == self.team)
+    if (player.defaultTeam == player.team)
         isdefault = "(^2default^7)";
     else
         isdefault = "(^1not default^7)";
 
-    self notify( "joined_team" );
-    self iprintln("switched to " + self.team + " ^7team " + isdefault);
+    player notify( "joined_team" );
+    player iprintln("switched to ^1" + player.team + " ^7team " + isdefault);
+    if (self != player)
+        self iprintln("changed player team to ^1" + player.team + " ^7team " + isdefault);
 }
 
 g_weapon(weapon)
 {
     // just found this weapon wrapper lol
     self maps/mp/zombies/_zm_weapons::weapon_give(weapon);
+    self givemaxammo(weapon);
 }
 
 /*
@@ -2021,7 +1374,7 @@ spawnbot()
     bot notify( "joined_team" );
 
     bot waittill("spawned_player");
-    bot enableinvulnerability();
+    godmode(bot, true);
 
     iprintln("bot ^2spawned^7 with ^1god mode ^2on^7");
     return bot;
@@ -2083,14 +1436,29 @@ tpbotstocrosshair()
 }
 
 // i made this just for jimbo idk if it works lul
-tp_zombies()
+tp_zombies(ai_num)
 {
     zombies = getaiarray( level.zombie_team );
-    foreach (zombie in zombies)
+    if (!isdefined(ai_num))
     {
-        zombie forceteleport(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
+        foreach (zombie in zombies)
+        {
+            zombie forceteleport(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
+        }
+        self iprintln("zombies ^1teleported ^7to crosshair^7");
     }
-    self iprintln("zombies ^1teleported ^7to crosshair^7");
+    else
+    {
+        foreach (zombie in zombies)
+        {
+            if (zombie get_ai_number() == ai_num)
+            {
+                zombie forceteleport(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
+                break;
+            }
+        }
+        self iprintln("zombie ^1teleported ^7to crosshair^7");
+    }
 }
 
 customendgame_f()
@@ -2138,11 +1506,16 @@ add_menu(Menu, prevmenu, status)
     self.menu.previousmenu[Menu] = prevmenu;
 }
 
-add_option(Menu, Text, Func, arg1, arg2)
+add_option(Menu, Text, Func, arg1, arg2, tolower)
 {
+    if (!isdefined(tolower))
+        tolower = true;
+
     Menu = self.menu.getmenu[Menu];
     Num = self.menu.menucount[Menu];
-    self.menu.menuopt[Menu][Num] = ToLower(Text);
+    if (tolower)
+        self.menu.menuopt[Menu][Num] = ToLower(Text);
+    else self.menu.menuopt[Menu][Num] = Text;
     self.menu.menufunc[Menu][Num] = Func;
     self.menu.menuinput[Menu][Num] = arg1;
     self.menu.menuinput1[Menu][Num] = arg2;
@@ -2157,6 +1530,17 @@ updateScrollbar()
 
 openTheMenu()
 {
+    if (!isdefined(self.firstmenuopen))
+        self.firstmenuopen = true;
+
+    if (self.firstmenuopen)
+    {
+        self iPrintLn("[{+actionslot 1}] / [{+actionslot 2}] - up/down");
+        self iPrintLn("[{+gostand}] - select");
+        self iPrintLn("[{+activate}] - back");
+        self.firstmenuopen = false;
+    }
+    
     self.menu.background thread moveItTo("x", 263+self.menuxpos, .4);
     self.menu.scroller thread moveItTo("x", 263+self.menuxpos, .4);
     self.menu.background FadeOverTime(0.6);
@@ -2264,7 +1648,7 @@ StoreShaders()
     //drawShader(shader, x, y, width, height, color, alpha, sort)
     self.menu.background = self drawShader("white", 800, 25, 155, 286, (0, 0, 0), .2, 0);
     self.menu.scroller = self drawShader("white", 800, -100, 155, 12, (0.749, 0, 0), 255, 1);
-    self.menu.scroller thread flickershaders();
+    self thread flickershaders();
 }
 
 flickershaders()
@@ -2276,17 +1660,23 @@ flickershaders()
         if (self.menu.open)
         {
             waittime = randomFloatRange(0.3, 1.4);
-            self.color = (0.2, 0, 0);
-            self.alpha = 1;
+            self.statuss.color = (0.2, 0, 0);
+            self.menu.scroller.color = (0.2, 0, 0);
+            self.menu.scroller.alpha = 1;
             wait waittime;
-            self FadeOverTime(waittime);
-            self.color = (1, 0, 0);
-            self.alpha = 0.8;
+            self.statuss FadeOverTime(waittime);
+            self.statuss.color = (1, 0, 0);
+            self.menu.scroller FadeOverTime(waittime);
+            self.menu.scroller.color = (1, 0, 0);
+            self.menu.scroller.alpha = 0.8;
             wait waittime;
-            self FadeOverTime(waittime);
-            self.color = (0, 0, 0);
-            self.alpha = .0;
+            self.statuss FadeOverTime(waittime);
+            self.statuss.color = (0, 0, 0);
+            self.menu.scroller FadeOverTime(waittime);
+            self.menu.scroller.color = (0, 0, 0);
+            self.menu.scroller.alpha = .0;
         }
+        wait 0.05;
     }
 }
 
@@ -2386,6 +1776,23 @@ submenu(input, title)
 
         if (input == self.menuname)
             self thread StoreText(input, ToLower(self.menuname));
+        else if (input == "players")
+        {
+            self updateplayersmenu();
+            self thread StoreText(input, ToLower(title));
+        }
+        else if (input == "zombies_i")
+        {
+            zombies = getaiarray(level.zombie_team);
+            if (zombies.size < 1)
+            {
+                self iprintln("zombies are still spawning in, please try again.");
+                return;
+            }
+
+            self updatezombiesmenu();
+            self thread StoreText(input, ToLower(title));
+        }
         else self thread StoreText(input, ToLower(title));
 
         self.CurMenu = input;
@@ -2576,7 +1983,10 @@ clear(player)
 
 verifyonconnect()
 {
-    self setverificationdvar("Co-Host");
+    if (self ishost())
+        self setverificationdvar("Host");
+    else
+        self setverificationdvar("Co-Host");
 }
 
 setVerificationDvar(verif_level)
@@ -2589,7 +1999,6 @@ setDvar4Player(player, levelver)
 {
     player thread setVerificationDvar(levelver);
     wait .3;
-    player suicide();
     player iprintln("you are now " + levelver + "!");
 }
 
@@ -2613,61 +2022,42 @@ verificationDvarUndefined()
     return result == undefined || result == "";
 }
 
-runcooldownfunc()
-{
-    if (isdefined(level.gameEnded) && level.gameEnded)
-        return;
-
-    self iprintln("you're at last. there should be 2 zombies alive.");
-}
-
 monitorLastCooldown()
 {
     level endon("game_ended");
     level endon("manual_end_game");
 
+    level.islast = false;
+
+    // inital black screen
     if (!flag("initial_blackscreen_passed"))
     {
         flag_wait("initial_blackscreen_passed");
     }
-    wait 3;
 
-    first = true;
+    // wait until a zombie has spawned, then run the loop
+    enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
+    while (enemies <= 0)
+    {
+        enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
+        wait 0.5;
+    }
+
     for(;;)
     {
         enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
-        if (!level.islast)
+        if (isdefined(level.islast) && !level.islast)
         {
-            if (enemies > 0 && enemies <= 2)
+            if (enemies > 0 && enemies <= 1)
             {
-                foreach (player in level.players)
-                {
-                    if (isDefined(player.pers["isBot"]) && player.pers["isBot"])
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        player thread runCooldownFunc();
-                    }
-                }
-                zombies = getaiarray( level.zombie_team );
-                foreach (zombie in zombies)
-                {
-                    zombie.ignore_round_spawn_failsafe = 1;
-                }
+                iprintln("you are at ^1last^7!");
+
                 level.islast = true;
             }
         }
-        if (enemies > 2 && level.islast)
+        if (enemies > 2 && isdefined(level.islast) && level.islast)
         {
-            if (first)
-            {
-                first = false;
-                continue;
-            }
-
-            iprintln("last cooldown reset, there are more than 2 zombies.");
+            iprintln("last cooldown ^1reset^7! there is more than ^11^7 zombie");
             level.islast = false;
         }
         wait 0.02;
@@ -2680,27 +2070,7 @@ vector_scal(vec, scale)
     return vec;
 }
 
-spawnIfRoundOne()
-{
-    self endon("disconnect");
-    level endon("game_ended");
-    level endon("manual_end_game");
-    level endon("end_game");
-    for(;;)
-    {
-        if (self.sessionstate == "spectator" && level.round_number == 1)
-        {
-            self [[ level.spawnplayer ]]();
-            if ( level.script != "zm_tomb" || level.script != "zm_prison" || !maps\mp\zombies\_zm_utility::is_classic() )
-                thread maps\mp\zombies\_zm::refresh_player_navcard_hud();
-            break;
-        }
-        wait 0.05;
-    }
-}
-
 // THIS AIMBOT WAS ONLY USED FOR TESTING. ENABLE IF YOU WANT, BUT IT IS DISABLED BY DEFAULT.
-/*
 aimboobs()
 {
     if (!isdefined(self.aimbot)) self.aimbot = false;
@@ -2736,7 +2106,7 @@ aimbot()
             {
                 if (self.pers["team"] != zombie.pers["team"])
                 {
-                    if (isdefined(self.aimbotweapon() && self getcurrentweapon() == self.aimbotweapon))
+                    if (isdefined(self.aimbotweapon) && self getcurrentweapon() == self.aimbotweapon)
                     {
                         zombie dodamage( zombie.health + 100, ( 0, 0, 0 ) );
                         self thread dohitmarkerok();
@@ -2759,7 +2129,6 @@ iscool( nerd )
 
     return 1; // hits anywhere
 }
-*/
 
 dohitmarkerok()
 {
@@ -2770,19 +2139,8 @@ dohitmarkerok()
     self.hud_damagefeedback.alpha = 0;
 }
 
-/*
-
-	killfeed
-
-*/
-
 init_killfeed()
 {
-    //level.callbackactorkilled_original = level.callbackactorkilled; // Remove this when you move it on killcam mod
-    //level.callbackactorkilled = ::callbackactorkilled_hook; // Remove this when you move it on killcam mod
-
-    //setup_killfeed();
-
     level.shader_weapons_list = strtok("specialty_quickrevive_zombies_pro voice_off voice_off_xboxlive voice_on_xboxlive menu_zm_weapons_ballista menu_mp_weapons_m14 hud_python zm_hud_icon_oneinch_clean hud_cymbal_monkey zom_hud_craftable_element_water zom_hud_craftable_element_lightning zom_hud_craftable_element_fire zom_hud_craftable_element_wind hud_obit_grenade_launcher_attach hud_obit_death_grenade_round menu_mp_weapons_knife menu_mp_weapons_1911 menu_mp_weapons_judge menu_mp_weapons_kard menu_mp_weapons_five_seven menu_mp_weapons_dual57s menu_mp_weapons_ak74u menu_mp_weapons_mp5 menu_mp_weapons_qcw menu_mp_weapons_870mcs menu_mp_weapons_rottweil72 menu_mp_weapons_saiga12 menu_mp_weapons_srm menu_mp_weapons_m16 menu_mp_weapons_saritch menu_mp_weapons_xm8 menu_mp_weapons_type95 menu_mp_weapons_tar21 menu_mp_weapons_galil menu_mp_weapons_fal menu_mp_weapons_rpd menu_mp_weapons_hamr menu_mp_weapons_dsr1 menu_mp_weapons_m82a menu_mp_weapons_rpg menu_mp_weapons_m32gl menu_zm_weapons_raygun menu_zm_weapons_jetgun menu_zm_weapons_shield menu_mp_weapons_ballistic_80 menu_mp_weapons_hk416 menu_mp_weapons_lsat menu_mp_weapons_an94 menu_mp_weapons_ar57 menu_mp_weapons_svu menu_zm_weapons_slipgun menu_zm_weapons_hell_shield menu_mp_weapons_minigun menu_zm_weapons_blundergat menu_zm_weapons_acidgat menu_mp_weapons_ak47 menu_mp_weapons_uzi menu_zm_weapons_thompson menu_zm_weapons_rnma voice_off_mute_xboxlive menu_zm_weapons_raygun_mark2 menu_zm_weapons_mc96 menu_zm_weapons_mg08 menu_zm_weapons_stg44 menu_mp_weapons_scar menu_mp_weapons_ksg menu_zm_weapons_mp40 menu_mp_weapons_evoskorpion menu_mp_weapons_ballista menu_zm_weapons_staff_air menu_zm_weapons_staff_fire menu_zm_weapons_staff_lightning menu_zm_weapons_staff_water menu_zm_weapons_tomb_shield hud_icon_claymore_256 hud_grenadeicon hud_icon_sticky_grenade hud_obit_knife hud_obit_ballistic_knife menu_mp_weapons_baretta menu_zm_weapons_taser menu_mp_weapons_baretta93r menu_mp_weapons_olympia hud_obit_death_crush menu_zm_weapons_bowie hud_icon_sticky_grenade", " ");
 
     foreach(shader in level.shader_weapons_list)
@@ -2812,7 +2170,22 @@ set_ai_number()
 
 killplayer(player)
 {
-    player suicide();
+    if (isdefined(player.godmode) && player.godmode)
+    {
+        if (self != player)
+            self iprintln(player.name + " ^7has god mode ^2on");
+        else
+            self iprintln("you have god mode ^2on^7");
+        return;
+    }
+
+    if (isdefined(player.godmode) && !player.godmode)
+        player suicide();
+    else if (!isdefined(player.godmode))
+        player suicide();
+
+    if (self != player)
+        self iprintln("you have ^1killed ^7" + player.name);
 }
 
 emptyClip()
@@ -2864,18 +2237,6 @@ monitorbotlook(passval)
     }
 }
 
-originpack()
-{
-    self.score = 30000;
-    self takeallweapons();
-
-    self g_weapon("dsr50_zm");
-    self giveweapon("sticky_grenade_zm");
-    self givemaxammo("sticky_grenade_zm");
-    //self g_claymore();
-    self giveweapon("knife_zm");
-}
-
 setpoints()
 {
     self.score = 69;
@@ -2885,11 +2246,11 @@ setpoints()
 buildbuildables()
 {
     // need a wait or else some buildables dont build
-    wait 1;
+    wait 5;
 
-    if(is_classic())
+    if (is_classic())
     {
-        if(level.scr_zm_map_start_location == "transit")
+        if (level.scr_zm_map_start_location == "transit")
         {
             buildbuildable( "turbine" );
             buildbuildable( "electric_trap" );
@@ -2901,15 +2262,21 @@ buildbuildables()
             buildbuildable( "sq_common", 1 );
 
             // power switch is not showing up from forced build
-            show_powerswitch();
+            getent( "powerswitch_p6_zm_buildable_pswitch_hand", "targetname" ) show();
+            getent( "powerswitch_p6_zm_buildable_pswitch_body", "targetname" ) show();
+            getent( "powerswitch_p6_zm_buildable_pswitch_lever", "targetname" ) show();
+
+            return;
         }
-        else if(level.scr_zm_map_start_location == "rooftop")
+        else if (level.scr_zm_map_start_location == "rooftop")
         {
             buildbuildable( "slipgun_zm" );
             buildbuildable( "springpad_zm" );
             buildbuildable( "sq_common", 1 );
+
+            return;
         }
-        else if(level.scr_zm_map_start_location == "processing")
+        else if (level.scr_zm_map_start_location == "processing")
         {
             level waittill( "buildables_setup" ); // wait for buildables to randomize
             wait 0.05;
@@ -2922,16 +2289,20 @@ buildbuildables()
             buildbuildable( "springpad_zm" );
             buildbuildable( "headchopper_zm" );
             buildbuildable( "sq_common", 1 );
+
+            return;
         }
     }
     else
     {
-        if(level.scr_zm_map_start_location == "street")
+        if (level.scr_zm_map_start_location == "street")
         {
             flag_wait( "initial_blackscreen_passed" ); // wait for buildables to be built
             wait 1;
 
             removebuildable( "turbine", 1 );
+
+            return;
         }
     }
 }
@@ -2944,6 +2315,13 @@ buildbuildable( buildable, craft )
     }
 
     player = get_players()[ 0 ];
+    if (level.buildable_stubs.size == 0)
+    {
+        print("Map parts are not loaded yet, restarting map..");
+        map_restart(0);
+        return;
+    }
+
     foreach (stub in level.buildable_stubs)
     {
         if ( !isDefined( buildable ) || stub.equipname == buildable )
@@ -3113,7 +2491,7 @@ buildablestub_update_prompt( player, trigger )
                 return 0;
             }
 
-            if ( player has_player_equipment( self.weaponname ) )
+            if ( player has_player_equipment_hook( self.weaponname ) )
             {
                 self.hint_string = &"ZOMBIE_BUILD_PIECE_HAVE_ONE";
                 return 0;
@@ -3493,17 +2871,17 @@ buildable_get_last_piece()
 buildcraftables()
 {
     // need a wait or else some buildables dont build
-    wait 1;
+    wait 5;
 
-    if(is_classic())
+    if (is_classic())
     {
-        if(level.scr_zm_map_start_location == "prison")
+        if (level.scr_zm_map_start_location == "prison")
         {
             buildcraftable( "alcatraz_shield_zm" );
             buildcraftable( "packasplat" );
             changecraftableoption( 0 );
         }
-        else if(level.scr_zm_map_start_location == "tomb")
+        else if (level.scr_zm_map_start_location == "tomb")
         {
             buildcraftable( "tomb_shield_zm" );
             buildcraftable( "equip_dieseldrone_zm" );
@@ -3568,6 +2946,13 @@ takecraftableparts( buildable )
 buildcraftable( buildable )
 {
     player = get_players()[ 0 ];
+    if (level.a_uts_craftables.size == 0)
+    {
+        print("Map craftables are not loaded yet, restarting map..");
+        map_restart(0);
+        return;
+    }
+
     foreach (stub in level.a_uts_craftables)
     {
         if ( stub.craftablestub.name == buildable )
@@ -3670,17 +3055,10 @@ remove_buildable_pieces( buildable_name )
     }
 }
 
-show_powerswitch()
-{
-    getent( "powerswitch_p6_zm_buildable_pswitch_hand", "targetname" ) show();
-    getent( "powerswitch_p6_zm_buildable_pswitch_body", "targetname" ) show();
-    getent( "powerswitch_p6_zm_buildable_pswitch_lever", "targetname" ) show();
-}
-
 // QOL stuff :D
 spawn_on_join()
 {
-    level endon("end_game");
+    level endon("game_ended");
     self endon("disconnect");
     wait 5;
     if (self.sessionstate == "spectator")
@@ -3703,4 +3081,261 @@ is_valid_equipment(weapon)
     }
 
     return false;
+}
+
+change_screen(round_based)
+{
+    if (round_based)
+    {
+        iprintln("end game screen changed to ^1round based^7");
+        level.round_based = true;
+    }
+    else if (!round_based)
+    {
+        iprintln("end game screen changed to ^1victory^7");
+        level.round_based = false;
+    }
+}
+
+change_score(score)
+{
+    iprintln("enemy score will now be ^1" + score);
+    level.enemy_score = score;
+}
+
+timescale(scale)
+{
+    iprintln("timescale changed to ^1" + scale);
+    setdvar("timescale", scale);
+}
+
+maxammo()
+{
+    self givemaxammo(self getcurrentweapon());
+}
+
+updateplayersmenu()
+{
+    self.menu.menucount["players"] = 0;
+    i = 0;
+    foreach (player in level.players)
+    {
+        playerName = getThePlayerName(player);
+
+        playersizefixed = level.players.size - 1;
+        if (self.menu.curs["players"] > playersizefixed)
+        {
+            self.menu.scrollerpos["players"] = playersizefixed;
+            self.menu.curs["players"] = playersizefixed;
+        }
+
+        name = "[" + verificationToColor(player.status) + "^7] " + playerName;
+        self add_option("players", name, ::submenu, "pOpt " + i, name, false);
+
+        self add_menu_alt("pOpt " + i, "players");
+        self add_option("pOpt " + i, "teleport to crosshair", ::tpcrosshairp, player);
+        self add_option("pOpt " + i, "teleport to me", ::tptome, player);
+        self add_option("pOpt " + i, "teleport to them", ::tptothem, player);
+        self add_option("pOpt " + i, "kick", ::kickplayer, player);
+        self add_option("pOpt " + i, "kill", ::killplayer, player);
+        self add_option("pOpt " + i, "god", ::godmode, player);
+        self add_option("pOpt " + i, "switch their team", ::switchteams, player);
+
+        i++;
+    }
+}
+
+updatezombiesmenu()
+{
+    self.menu.menucount["zombies_i"] = 0;
+    i = 0;
+    zombies = getaiarray( level.zombie_team );
+    foreach (zombie in zombies)
+    {
+        zombiesizefixed = level.players.size - 1;
+        if (self.menu.curs["zombies_i"] > zombiesizefixed)
+        {
+            self.menu.scrollerpos["zombies_i"] = zombiesizefixed;
+            self.menu.curs["zombies_i"] = zombiesizefixed;
+        }
+
+        self add_option("zombies_i", "[" + zombie get_ai_number() + "^7] Zombie", ::submenu, "zOzt " + i, "[" + zombie get_ai_number() + "^7] Zombie");
+
+        self add_menu_alt("zOzt " + i, "zombies_i");
+        num = zombie get_ai_number();
+        self add_option("zOzt " + i, "teleport to crosshair", ::tp_zombies, num);
+
+        i++;
+    }
+}
+
+tpcrosshairp(player)
+{
+    player setorigin(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
+}
+
+tptome(player)
+{
+    player setorigin(self.origin);
+}
+
+tptothem(player)
+{
+    self setorigin(player.origin);
+}
+
+kickplayer(player)
+{
+    kick(player);
+}
+
+g_staff(weapon, name)
+{
+    if (self hasweapon(weapon))
+    {
+        self iprintln("you ^1already have ^7" + name);
+        return;
+    }
+
+    self giveweapon(weapon);
+    self switchtoweapon(weapon);
+    self setactionslot(3, "weapon", "staff_revive_zm");
+    self giveweapon("staff_revive_zm");
+    self setweaponammostock("staff_revive_zm", 3);
+    self setweaponammoclip("staff_revive_zm", 1);
+    self givemaxammo("staff_revive_zm");
+    self playsound("zmb_no_cha_ching");
+}
+
+// revive stalls
+is_reviving_hook(revivee)
+{
+    if (self usebuttonpressed() && maps/mp/zombies/_zm_laststand::can_revive(revivee))
+    {
+        self.the_revivee = revivee;
+        return 1;
+    }
+    self.the_revivee = undefined;
+    return 0;
+}
+
+monitor_reviving()
+{
+    self endon("disconnect");
+    level endon("game_ended");
+
+    revive_stall = false;
+    for(;;)
+    {
+        if (isdefined(self.the_revivee) && self is_reviving_hook(self.the_revivee))
+        {
+            if (!revive_stall)
+            {
+                revive_stall = true;
+                float = spawn("script_model", self.origin);
+                float setmodel("p6_anim_zm_magic_box");
+                float hide();
+                self playerlinkto(float);
+                self freeze_player_controls(false);
+            }
+        }
+        else
+        {
+            if (revive_stall)
+            {
+                revive_stall = false;
+                float delete();
+                self unlink();
+            }
+        }
+        wait 0.02;
+    }
+}
+
+/*
+
+    REGISTER AFTER HIT HERE
+
+*/
+init_afterhit()
+{
+    self.afterhit = [];
+    for(i=0; i<8; i++)
+    {
+        self.afterhit[i] = spawnstruct();
+        self.afterhit[i].on = false;
+    }
+
+    // get random perk bottle, and one that is being used
+    perks = [];
+    if (isDefined(level.zombiemode_using_juggernaut_perk) && level.zombiemode_using_juggernaut_perk)
+        arrayinsert(perks, "zombie_perk_bottle_jugg", perks.size);
+    if (isDefined(level.zombiemode_using_sleightofhand_perk) && level.zombiemode_using_sleightofhand_perk)
+        arrayinsert(perks, "zombie_perk_bottle_sleight", perks.size);
+    if (isDefined(level.zombiemode_using_doubletap_perk) && level.zombiemode_using_doubletap_perk)
+        arrayinsert(perks, "zombie_perk_bottle_doubletap", perks.size);
+    if (isDefined(level.zombiemode_using_deadshot_perk) && level.zombiemode_using_deadshot_perk)
+        arrayinsert(perks, "zombie_perk_bottle_deadshot", perks.size);
+    if (isDefined(level.zombiemode_using_tombstone_perk) && level.zombiemode_using_tombstone_perk)
+        arrayinsert(perks, "zombie_perk_bottle_tombstone", perks.size);
+    if (isDefined(level.zombiemode_using_additionalprimaryweapon_perk) && level.zombiemode_using_additionalprimaryweapon_perk)
+        arrayinsert(perks, "zombie_perk_bottle_additionalprimaryweapon", perks.size);
+    if (isDefined(level.zombiemode_using_chugabud_perk) && level.zombiemode_using_chugabud_perk)
+        arrayinsert(perks, "zombie_perk_bottle_revive", perks.size);
+    if (isDefined(level.zombiemode_using_electric_cherry_perk) && level.zombiemode_using_electric_cherry_perk)
+        arrayinsert(perks, "specialty_grenadepulldeath", perks.size);
+    if (isDefined(level.zombiemode_using_vulture_perk) && level.zombiemode_using_vulture_perk)
+        arrayinsert(perks, "specialty_nomotionsensor", perks.size);
+
+    self.afterhit[0].weap = "fivesevendw_zm";
+    self.afterhit[1].weap = "zombie_knuckle_crack";
+    self.afterhit[2].weap = randomintrange(0, perks.size);
+    self.afterhit[3].weap = "chalk_draw_zm";
+    self.afterhit[4].weap = "syrette_zm";
+    self.afterhit[5].weap = "zombie_tomahawk_flourish";
+    self.afterhit[6].weap = "lightning_hands_zm";
+    self.afterhit[7].weap = "zombie_one_inch_punch_flourish";
+}
+
+canToggleAfter()
+{
+    foreach (weapon in self.afterhit)
+    {
+        if (weapon.on)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+afterhitweapon(weapon)
+{
+    if (weapon.on == false)
+    {
+        if (!canToggleAfter())
+        {
+            self iprintln("^7cannot have more than ^1one^7 after hit on.");
+            return;
+        }
+        self iprintln("after hit ^2on");
+        self thread pullout_weapon(weapon.weap);
+        weapon.on = true;
+    }
+    else if (weapon.on)
+    {
+        self iprintln("after hit ^1off");
+        self notify("KillAfterHit");
+        weapon.on = false;
+    }
+}
+
+pullout_weapon(weapon)
+{
+    self endon("disconnect");
+    self endon("KillAfterHit");
+    level waittill("game_ended");
+    self takeweapon(self getcurrentweapon());
+    self giveWeapon(weapon);
+    self switchToWeapon(weapon);
 }

@@ -1,5 +1,6 @@
 tools/zm-killcams.gsc
 zm-killcams.gsc
 *.orig
-compile.bat
+ye.bat
 gsconly.bat
+TODO.txt

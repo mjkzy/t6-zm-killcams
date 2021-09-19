@@ -1,0 +1,7 @@
+to know where to put the files, please follow the instructions below:
+
+1. WINDOWS KEY + R (or open the Run program), and type in: %localappdata%/Plutonium
+2. then, go to storage -> t6 -> scripts -> zm
+3. copy and paste the 2 folders + gsc into the zm folder. once done, you can now launch your game.
+
+**IF THE scripts OR zm FOLDER DOES NOT EXIST, YOU CAN SIMPLY CREATE IT**

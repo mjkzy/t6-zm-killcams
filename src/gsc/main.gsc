@@ -31,57 +31,60 @@
 #include maps/mp/zombies/_zm_weapons;
 #include maps/mp/zombies/_zm_utility;
 
+main()
+{
+    replacefunc(maps/mp/zombies/_zm_laststand::is_reviving, ::is_reviving_hook);
+}
+
 init()
 {
+    setdvar("scr_killcam_time", 5);
+
     init_precache();
     init_dvars();
 
     // variables
-    level.no_end_game_check = false;
-    level.friendlyfire = 1;
     level.perk_purchase_limit = 20;
     level.zombie_vars["zombie_use_failsafe"] = false;
     set_zombie_var( "zombie_use_failsafe", 0 );
     level.player_out_of_playable_area_monitor = false;
     level.player_too_many_weapons_monitor = false;
 
-    level.callbackactorkilledstub = level.callbackactorkilled;
-    level.callbackactorkilled = ::actor_killed_override;
+    level.actor_killed_stub = level.callbackactorkilled;
+    level.callbackactorkilled = ::actor_killed;
     level._zombies_round_spawn_failsafe = undefined;
     level.onTeamOutcomeNotify = ::teamOutcomeNotify;
-    level.callbackplayerdamage = ::callback_playerdamage;
-    level.playerlaststand_func = undefined;
 
-    level.round_spawn_func = ::round_spawning_override;
-    level.spawnclient = ::spawnclient;
-    level.spawnplayer = ::spawnplayer;
-    level.spawnspectator = ::spawnspectator;
+    // vars
+    level.enemy_score = randomintrange(0, 4); // default is random
+    level.round_based = false;                // victory by default
 
     maps/mp/zombies/_zm_spawner::register_zombie_damage_callback(::do_hitmarker);
     maps/mp/zombies/_zm_spawner::register_zombie_death_event_callback(::do_hitmarker_death);
 
-    init_killfeed();
-
+    level thread init_killfeed();
     level thread onplayerconnect();
     level thread endgamewhenhit();
     level thread open_seseme();
-    level thread doFinalKillcam();
     level thread drawZombiesCounter();
     level thread monitorlastcooldown();
-    level thread set_pap_price();
 
+    // lil changes
+    level thread set_pap_price();
     level thread buildbuildables();
     level thread buildcraftables();
 
-    initfinalkillcam();
-
+    level.debug_mode = getdvarintdefault("debug_mode", 0);
     level.result = 0;
+
+    level thread initfinalkillcam();
+    level thread doFinalKillcam();
 }
 
 set_pap_price()
 {
-    precachestring( &"ZOMBIE_PERK_PACKAPUNCH" );
-    precachestring( &"ZOMBIE_PERK_PACKAPUNCH_ATT" );
+    precachestring(&"ZOMBIE_PERK_PACKAPUNCH");
+    precachestring(&"ZOMBIE_PERK_PACKAPUNCH_ATT");
 
     level waittill( "Pack_A_Punch_on" );
 
@@ -102,7 +105,6 @@ onPlayerConnect()
             player thread init_player_hitmarkers();
 
         player thread onPlayerSpawned();
-        player thread spawnIfRoundOne();
         player thread verifyOnConnect();
         player thread spawn_on_join();
     }
@@ -120,20 +122,26 @@ onPlayerSpawned()
     self.defaultTeam = self.team;
     self.ufospeed = 20;
 
+    self.killcam_rank = "zombies_rank_5"; // max rank by default
+
     init_afterhit();
 
     for(;;)
     {
         self waittill("spawned_player");
 
-        self setperk("specialty_fallheight");
-        self setperk("specialty_unlimitedsprint");
-
         if (isdefined(level.intermission) && level.intermission)
         {
-            self enableInvulnerability();
-            self freezecontrols(true);
+            if (isalive(self))
+            {
+                self enableInvulnerability();
+                self freezecontrols(true);
+            }
+            continue;
         }
+
+        self setperk("specialty_fallheight");
+        self setperk("specialty_unlimitedsprint");
 
         if (self.status == "Host" || self.status == "Co-Host" || self.status == "Admin" || self.status == "VIP" || self.status == "Verified")
         {
@@ -163,101 +171,13 @@ onPlayerSpawned()
             }
 
             self thread saveandload(false);
+            self thread monitor_reviving();
 
             self iPrintLn("^7hello ^1" + self.name + " ^7& welcome to ^1mikey's zm mod^7!");
             self iPrintLn("^7hold [{+speed_throw}] & press [{+actionslot 1}] to open menu");
-            self iPrintLn("'last' is when ^12 ^7zombies are alive.");
+            self iPrintLn("'last' is when ^11 ^7zombie are alive.");
 
             self.first = false;
         }
     }
-}
-
-/*
-
-    REGISTER AFTER HIT HERE
-
-*/
-init_afterhit()
-{
-    self.afterhit = [];
-    self.afterhit[0] = SpawnStruct();
-    self.afterhit[0].weap = "fivesevendw_zm";
-    self.afterhit[0].on = false;
-    self.afterhit[1] = SpawnStruct();
-    self.afterhit[1].weap = "zombie_knuckle_crack";
-    self.afterhit[1].on = false;
-
-    // get random perk bottle, and one that is being used
-    perks = [];
-    if (isDefined(level.zombiemode_using_juggernaut_perk) && level.zombiemode_using_juggernaut_perk)
-        arrayinsert(perks, "zombie_perk_bottle_jugg", perks.size);
-    if (isDefined(level.zombiemode_using_sleightofhand_perk) && level.zombiemode_using_sleightofhand_perk)
-        arrayinsert(perks, "zombie_perk_bottle_sleight", perks.size);
-    if (isDefined(level.zombiemode_using_doubletap_perk) && level.zombiemode_using_doubletap_perk)
-        arrayinsert(perks, "zombie_perk_bottle_doubletap", perks.size);
-    if (isDefined(level.zombiemode_using_deadshot_perk) && level.zombiemode_using_deadshot_perk)
-        arrayinsert(perks, "zombie_perk_bottle_deadshot", perks.size);
-    if (isDefined(level.zombiemode_using_tombstone_perk) && level.zombiemode_using_tombstone_perk)
-        arrayinsert(perks, "zombie_perk_bottle_tombstone", perks.size);
-    if (isDefined(level.zombiemode_using_additionalprimaryweapon_perk) && level.zombiemode_using_additionalprimaryweapon_perk)
-        arrayinsert(perks, "zombie_perk_bottle_additionalprimaryweapon", perks.size);
-    if (isDefined(level.zombiemode_using_chugabud_perk) && level.zombiemode_using_chugabud_perk)
-        arrayinsert(perks, "zombie_perk_bottle_revive", perks.size);
-    //if (isDefined(level.zombiemode_using_electric_cherry_perk) && level.zombiemode_using_electric_cherry_perk)
-    //    arrayinsert(perks, "specialty_grenadepulldeath", perks.size);
-    //if (isDefined(level.zombiemode_using_vulture_perk) && level.zombiemode_using_vulture_perk)
-    //    arrayinsert(perks, "specialty_nomotionsensor", perks.size);
-
-    self.afterhit[2] = SpawnStruct();
-    perkindex = randomintrange(0, perks.size);
-    self.afterhit[2].weap = perks[perkindex];
-    self.afterhit[2].on = false;
-
-    self.afterhit[3] = SpawnStruct();
-    self.afterhit[3].weap = "chalk_draw_zm";
-    self.afterhit[3].on = false;
-}
-
-canToggleAfter()
-{
-    foreach (weapon in self.afterhit)
-    {
-        if (weapon.on)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-afterhitweapon(weapon)
-{
-    if (weapon.on == false)
-    {
-        if (!canToggleAfter())
-        {
-            self iprintln("^7cannot have more than ^1one^7 after hit on.");
-            return;
-        }
-        self iprintln("after hit ^2on");
-        self thread pullout_weapon(weapon.weap);
-        weapon.on = true;
-    }
-    else if (weapon.on)
-    {
-        self iprintln("after hit ^1off");
-        self notify("KillAfterHit");
-        weapon.on = false;
-    }
-}
-
-pullout_weapon(weapon)
-{
-    self endon("disconnect");
-    self endon("KillAfterHit");
-    level waittill("game_ended");
-    self takeweapon(self getcurrentweapon());
-    self giveWeapon(weapon);
-    self switchToWeapon(weapon);
 }
