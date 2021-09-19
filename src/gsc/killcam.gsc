@@ -119,13 +119,19 @@ dofinalkillcam() //checked changed to match cerberus output
         player = players[ index ];
         player closemenu();
         player closeingamemenu();
-        player thread finalkillcam( winner );
+        if (!isdefined(player.pers["isBot"]) && !player.pers["isBot"])
+        {
+            print(winner);
+            player thread finalkillcam( winner );
+        }
     }
     wait 0.1;
     while ( areanyplayerswatchingthekillcam() )
     {
+        print("players watching, waiting...");
         wait 0.05;
     }
+    print("killcam done");
     level notify( "final_killcam_done" );
     level.infinalkillcam = 0;
     return;
@@ -135,9 +141,13 @@ areanyplayerswatchingthekillcam() //checked changed to match cerberus output
 {
     foreach (player in level.players)
     {
-        if (isDefined(player.killcam) && player.killcam == true)
+        if (!isdefined(player.pers["isBot"]) && !player.pers["isBot"])
         {
-            return true;
+            print(player.name + ": " + player.killcam);
+            if (isDefined(player.killcam) && player.killcam)
+            {
+                return true;
+            }
         }
     }
     return false;
@@ -453,9 +463,15 @@ finalkillcam( winner ) //checked changed to match cerberus output
     self endon("disconnect");
     level endon("game_ended");
 
+    print(winner);
+
     attacker = level.finalkillcamsettings[ winner ].attacker;
 
+    print(attacker.name);
+
     setmatchflag("final_killcam", 1);
+
+    print("1");
 
     killcamsettings = level.finalkillcamsettings[ winner ];
     postdeathdelay = ( getTime() - killcamsettings.deathtime ) / 1000;
@@ -466,19 +482,28 @@ finalkillcam( winner ) //checked changed to match cerberus output
     killcamlength = ( camtime + postdelay ) - 0.05;
     killcamstarttime = getTime() - ( killcamoffset * 1000 );
 
+    print("2");
+
     self notify("begin_killcam", getTime());
     self.sessionstate = "spectator";
     self.spectatorclient = killcamsettings.spectatorclient;
     self.killcamentity = -1;
 
+    print("3");
+
     if ( killcamsettings.entityindex >= 0 )
         self thread setkillcamentity( killcamsettings.entityindex, killcamsettings.entitystarttime - killcamstarttime - 100 );
+
+    print("4");
 
     self.killcamtargetentity = killcamsettings.targetentityindex;
     self.archivetime = killcamoffset;
     self.killcamlength = killcamlength;
     self.psoffsettime = killcamsettings.offsettime;
     self overlay(true, attacker, true); // killcam overlay
+
+    print("5");
+
     foreach ( team in level.teams )
     {
         self allowspectateteam( team, 1 );
@@ -489,6 +514,7 @@ finalkillcam( winner ) //checked changed to match cerberus output
     wait 0.05;
     if ( self.archivetime <= predelay )
     {
+        print("ARCHIVE TIME IS BELOW PREDELAY, BYE!");
         self.sessionstate = "dead";
         self.spectatorclient = -1;
         self.killcamentity = -1;
@@ -496,8 +522,12 @@ finalkillcam( winner ) //checked changed to match cerberus output
         self.psoffsettime = 0;
         self notify( "end_killcam" );
         self overlay(false);
+        print("6");
         return;
     }
+
+    print("7");
+
     self thread checkforabruptkillcamend();
     self.killcam = 1;
     self thread waitkillcamtime();
@@ -505,6 +535,8 @@ finalkillcam( winner ) //checked changed to match cerberus output
 
     self waittill("end_killcam");
     self endkillcam(1);
+
+    print("8");
 
     setmatchflag("final_killcam", 0);
     setmatchflag("round_end_killcam", 0);

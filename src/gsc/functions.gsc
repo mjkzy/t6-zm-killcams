@@ -22,6 +22,8 @@ init_precache()
     precacheshader("faction_cia");
     precacheshader("faction_cdc");
 
+    precachemodel("p6_anim_zm_magic_box");
+
     precacheitem("zombie_knuckle_crack");
     precacheitem("zombie_perk_bottle_jugg");
     precacheitem("zombie_perk_bottle_sleight");
@@ -44,6 +46,7 @@ init_dvars()
     setdvar("ui_friendlyfire", 1);
     setdvar("jump_slowdownEnable", 0);
     setdvar("sv_enableBounces", 1);
+    setdvar("player_lastStandBleedoutTime", 9999);
 }
 
 endgamewhenhit()
@@ -682,7 +685,6 @@ changeVerificationMenu(player, verlevel)
         if (player getVerificationDvar() == "Unverified")
             player thread destroyMenu(player);
 
-        player suicide();
         self iprintln("set level for " + getThePlayerName(player) + " to " + verificationToColor(verlevel));
         player iprintln("your level has been set to " + verificationToColor(verlevel));
     }
@@ -827,13 +829,13 @@ CreateMenu()
     self add_option(self.menuname, "players menu", ::submenu, "players", "players menu");
 
     self add_menu("mods", self.menuname, "Verified");
-    self add_option("mods", "god", ::godmode);
+    self add_option("mods", "god", ::godmode, self);
     self add_option("mods", "ufo", ::ufomode);
     self add_option("mods", "ufo speed", ::ufomodespeed);
     self add_option("mods", "die", ::killplayer, self);
     self add_option("mods", "save and load", ::saveandload);
     self add_option("mods", "drop weapon", ::dropweapon);
-    self add_option("mods", "switch teams", ::switchteams);
+    self add_option("mods", "switch teams", ::switchteams, self);
     self add_option("main", "empty stock", ::emptyClip);
     if (isdefined(level.debug_mode) && level.debug_mode)
         self add_option("mods", "aimbot", ::aimboobs);
@@ -1150,20 +1152,32 @@ CreateMenu()
     }
 }
 
-godmode()
+godmode(player, silent)
 {
-    if (!isdefined(self.godmode)) self.godmode = false;
-    if (!self.godmode)
+    if (!isdefined(silent)) silent = false;
+    if (!isdefined(player.godmode)) player.godmode = false;
+    if (!player.godmode)
     {
-        self enableinvulnerability();
-        self iprintln("god mode ^2on");
-        self.godmode = true;
+        player enableinvulnerability();
+        player iprintln("god mode ^2on");
+        player.godmode = true;
     }
-    else if (self.godmode)
+    else if (player.godmode)
     {
-        self disableinvulnerability();
-        self iprintln("god mode ^1off");
-        self.godmode = false;
+        player disableinvulnerability();
+        player iprintln("god mode ^1off");
+        player.godmode = false;
+    }
+
+    if (self != player)
+    {
+        if (!silent)
+        {
+            if (player.godmode)
+                self iprintln(player.name + "'s god mode ^2on");
+            else if (!player.godmode)
+                self iprintln(player.name + "'s god mode ^1off");
+        }
     }
 }
 
@@ -1241,36 +1255,38 @@ ufomodespeed()
     }
 }
 
-switchteams()
+switchteams(player)
 {
-    self.switching_teams = 1;
-    if (self.team == "allies")
+    player.switching_teams = 1;
+    if (player.team == "allies")
     {
-        self.joining_team = "axis";
-        self.leaving_team = self.pers[ "team" ];
-        self.team = "axis";
-        self.pers["team"] = "axis";
-        self.sessionteam = "axis";
-        self._encounters_team = "A";
+        player.joining_team = "axis";
+        player.leaving_team = player.pers[ "team" ];
+        player.team = "axis";
+        player.pers["team"] = "axis";
+        player.sessionteam = "axis";
+        player._encounters_team = "A";
     }
     else
     {
-        self.joining_team = "allies";
-        self.leaving_team = self.pers[ "team" ];
-        self.team = "allies";
-        self.pers["team"] = "allies";
-        self.sessionteam = "allies";
-        self._encounters_team = "B";
+        player.joining_team = "allies";
+        player.leaving_team = player.pers[ "team" ];
+        player.team = "allies";
+        player.pers["team"] = "allies";
+        player.sessionteam = "allies";
+        player._encounters_team = "B";
     }
 
     isdefault = "";
-    if (self.defaultTeam == self.team)
+    if (player.defaultTeam == player.team)
         isdefault = "(^2default^7)";
     else
         isdefault = "(^1not default^7)";
 
-    self notify( "joined_team" );
-    self iprintln("switched to " + self.team + " ^7team " + isdefault);
+    player notify( "joined_team" );
+    player iprintln("switched to ^1" + player.team + " ^7team " + isdefault);
+    if (self != player)
+        self iprintln("changed player team to ^1" + player.team + " ^7team " + isdefault);
 }
 
 g_weapon(weapon)
@@ -1361,7 +1377,7 @@ spawnbot()
     bot notify( "joined_team" );
 
     bot waittill("spawned_player");
-    bot enableinvulnerability();
+    godmode(bot, true);
 
     iprintln("bot ^2spawned^7 with ^1god mode ^2on^7");
     return bot;
@@ -1493,11 +1509,16 @@ add_menu(Menu, prevmenu, status)
     self.menu.previousmenu[Menu] = prevmenu;
 }
 
-add_option(Menu, Text, Func, arg1, arg2)
+add_option(Menu, Text, Func, arg1, arg2, tolower)
 {
+    if (!isdefined(tolower))
+        tolower = true;
+
     Menu = self.menu.getmenu[Menu];
     Num = self.menu.menucount[Menu];
-    self.menu.menuopt[Menu][Num] = ToLower(Text);
+    if (tolower)
+        self.menu.menuopt[Menu][Num] = ToLower(Text);
+    else self.menu.menuopt[Menu][Num] = Text;
     self.menu.menufunc[Menu][Num] = Func;
     self.menu.menuinput[Menu][Num] = arg1;
     self.menu.menuinput1[Menu][Num] = arg2;
@@ -1754,7 +1775,8 @@ submenu(input, title)
         }
         else if (input == "zombies_i")
         {
-            if (level.zombie_team.size <= 0)
+            zombies = getaiarray(level.zombie_team);
+            if (zombies.size < 1)
             {
                 self iprintln("zombies are still spawning in, please try again.");
                 return;
@@ -1969,7 +1991,6 @@ setDvar4Player(player, levelver)
 {
     player thread setVerificationDvar(levelver);
     wait .3;
-    player suicide();
     player iprintln("you are now " + levelver + "!");
 }
 
@@ -2157,7 +2178,22 @@ set_ai_number()
 
 killplayer(player)
 {
-    player suicide();
+    if (isdefined(player.godmode) && player.godmode)
+    {
+        if (self != player)
+            self iprintln(player.name + " ^7has god mode ^2on");
+        else
+            self iprintln("you have god mode ^2on^7");
+        return;
+    }
+
+    if (isdefined(player.godmode) && !player.godmode)
+        player suicide();
+    else if (!isdefined(player.godmode))
+        player suicide();
+
+    if (self != player)
+        self iprintln("you have ^1killed ^7" + player.name);
 }
 
 emptyClip()
@@ -3101,13 +3137,17 @@ updateplayersmenu()
             self.menu.curs["players"] = playersizefixed;
         }
 
-        self add_option("players", "[" + verificationToColor(player.status) + "^7] " + playerName, ::submenu, "pOpt " + i, "[" + verificationToColor(player.status) + "^7] " + playerName);
+        name = "[" + verificationToColor(player.status) + "^7] " + playerName;
+        self add_option("players", name, ::submenu, "pOpt " + i, name, false);
 
         self add_menu_alt("pOpt " + i, "players");
         self add_option("pOpt " + i, "teleport to crosshair", ::tpcrosshairp, player);
         self add_option("pOpt " + i, "teleport to me", ::tptome, player);
+        self add_option("pOpt " + i, "teleport to them", ::tptothem, player);
         self add_option("pOpt " + i, "kick", ::kickplayer, player);
         self add_option("pOpt " + i, "kill", ::killplayer, player);
+        self add_option("pOpt " + i, "god", ::godmode, player);
+        self add_option("pOpt " + i, "switch their team", ::switchteams, player);
 
         i++;
     }
@@ -3145,6 +3185,11 @@ tpcrosshairp(player)
 tptome(player)
 {
     player setorigin(self.origin);
+}
+
+tptothem(player)
+{
+    self setorigin(player.origin);
 }
 
 kickplayer(player)

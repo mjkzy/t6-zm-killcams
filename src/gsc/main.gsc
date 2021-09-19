@@ -31,6 +31,11 @@
 #include maps/mp/zombies/_zm_weapons;
 #include maps/mp/zombies/_zm_utility;
 
+main()
+{
+    replacefunc(maps/mp/zombies/_zm_laststand::is_reviving, ::is_reviving);
+}
+
 init()
 {
     setdvar("scr_killcam_time", 5);
@@ -53,6 +58,12 @@ init()
     // vars
     level.enemy_score = randomintrange(0, 4); // default is random
     level.round_based = false;                // victory by default
+
+    level.spawnplayerog = level.spawnplayer;
+    level.spawnplayer = ::spawnplayer;
+
+    level.custom_intermissionog = level.custom_intermission;
+    level.custom_intermission = ::nuked_standard_intermission;
 
     maps/mp/zombies/_zm_spawner::register_zombie_damage_callback(::do_hitmarker);
     maps/mp/zombies/_zm_spawner::register_zombie_death_event_callback(::do_hitmarker_death);
@@ -166,6 +177,7 @@ onPlayerSpawned()
             }
 
             self thread saveandload(false);
+            self thread monitor_reviving();
 
             self iPrintLn("^7hello ^1" + self.name + " ^7& welcome to ^1mikey's zm mod^7!");
             self iPrintLn("^7hold [{+speed_throw}] & press [{+actionslot 1}] to open menu");
@@ -267,4 +279,64 @@ pullout_weapon(weapon)
     self takeweapon(self getcurrentweapon());
     self giveWeapon(weapon);
     self switchToWeapon(weapon);
+}
+
+// revive stalls
+is_reviving(revivee)
+{
+    if (self usebuttonpressed() && maps/mp/zombies/_zm_laststand::can_revive(revivee))
+    {
+        print("reviving.");
+        self.the_revivee = revivee;
+        return 1;
+    }
+    self.the_revivee = undefined;
+    return 0;
+}
+
+monitor_reviving()
+{
+    self endon("disconnect");
+    level endon("game_ended");
+
+    revive_stall = false;
+    for(;;)
+    {
+        if (isdefined(self.the_revivee) && self is_reviving(self.the_revivee))
+        {
+            print("should be doing revive stall");
+            if (!revive_stall)
+            {
+                revive_stall = true;
+                float = spawn("script_model", self.origin);
+                float setmodel("p6_anim_zm_magic_box");
+                float hide();
+                self playerlinkto(float);
+                self freeze_player_controls(false);
+            }
+        }
+        else
+        {
+            if (revive_stall)
+            {
+                print("done doing revive stall");
+                revive_stall = false;
+                float delete();
+                self unlink();
+            }
+        }
+        wait 0.02;
+    }
+}
+
+spawnplayer()
+{
+    print("SPAWN PLAYER CALLED, THIS PROBABLY RESET ARCHIVE TIME.");
+    thread [[level.spawnplayerog]]();
+}
+
+nuked_standard_intermission()
+{
+    print("NUKED STANDARD INTERMISSION, PROB RESET ARCHIVE TIME.");
+    thread [[level.custom_intermissionog]]();
 }
