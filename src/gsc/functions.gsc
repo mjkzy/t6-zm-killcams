@@ -71,16 +71,13 @@ endgamewhenhit()
     {
         enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
         if ((enemies < 1 || enemies == 1) && level.islast)
+        if (enemies <= 1 && level.islast)
         {
             if (int(getDvar("g_ai")) != 1)
                 setDvar("g_ai", 1);
 
             level thread customendgame();
 
-            // kill rest
-            zombs = getaiarray( level.zombie_team );
-            foreach (zomb in zombs)
-                zomb dodamage(zomb[i].health * 5000, (0, 0, 0));
             break;
         }
         wait 0.05;
@@ -123,7 +120,8 @@ customendgame()
     level.gameEnded = true;
     SetDvar( "g_gameEnded", 1 );
     level.inGracePeriod = false;
-    level notify ( "game_ended" );
+    level notify("game_ended");
+    level notify("game_module_ended"); // fixes killcam fucking up on new round. (for nerds, when a new round occurs, it calls spawn player on spectators and resets archive time, BUT THEY ARE IN KILLCAM.)
     level.allowBattleChatter = true;
     maps\mp\gametypes_zm\_globallogic_audio::flushDialog();
 
@@ -1533,6 +1531,17 @@ updateScrollbar()
 
 openTheMenu()
 {
+    if (!isdefined(self.firstmenuopen))
+        self.firstmenuopen = true;
+
+    if (self.firstmenuopen)
+    {
+        self iPrintLn("[{+actionslot 1}] / [{+actionslot 2}] - up/down");
+        self iPrintLn("[{+gostand}] - select");
+        self iPrintLn("[{+activate}] - back");
+        self.firstmenuopen = false;
+    }
+    
     self.menu.background thread moveItTo("x", 263+self.menuxpos, .4);
     self.menu.scroller thread moveItTo("x", 263+self.menuxpos, .4);
     self.menu.background FadeOverTime(0.6);
@@ -2014,47 +2023,42 @@ verificationDvarUndefined()
     return result == undefined || result == "";
 }
 
-runcooldownfunc()
-{
-    if (isdefined(level.gameEnded) && level.gameEnded)
-        return;
-
-    self iprintln("you're at last. there should be 2 zombies alive.");
-}
-
 monitorLastCooldown()
 {
     level endon("game_ended");
     level endon("manual_end_game");
 
+    level.islast = false;
+
+    // inital black screen
     if (!flag("initial_blackscreen_passed"))
     {
         flag_wait("initial_blackscreen_passed");
     }
-    wait 3;
 
-    level.islast = false;
+    // wait until a zombie has spawned, then run the loop
+    enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
+    while (enemies <= 0)
+    {
+        enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
+        wait 0.5;
+    }
+
     for(;;)
     {
         enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
         if (isdefined(level.islast) && !level.islast)
         {
-            if (enemies > 0 && enemies <= 2)
+            if (enemies > 0 && enemies <= 1)
             {
-                foreach (player in level.players)
-                {
-                    if (!isDefined(player.pers["isBot"]) && !player.pers["isBot"])
-                    {
-                        player thread runCooldownFunc();
-                    }
-                }
+                print("you are at ^1last^7!");
 
                 level.islast = true;
             }
         }
         if (enemies > 2 && isdefined(level.islast) && level.islast)
         {
-            iprintln("last cooldown reset, there are more than 2 zombies.");
+            iprintln("last cooldown ^1reset^7! there is more than ^11^7 zombie");
             level.islast = false;
         }
         wait 0.02;
@@ -2136,19 +2140,8 @@ dohitmarkerok()
     self.hud_damagefeedback.alpha = 0;
 }
 
-/*
-
-	killfeed
-
-*/
-
 init_killfeed()
 {
-    //level.callbackactorkilled_original = level.callbackactorkilled; // Remove this when you move it on killcam mod
-    //level.callbackactorkilled = ::callbackactorkilled_hook; // Remove this when you move it on killcam mod
-
-    //setup_killfeed();
-
     level.shader_weapons_list = strtok("specialty_quickrevive_zombies_pro voice_off voice_off_xboxlive voice_on_xboxlive menu_zm_weapons_ballista menu_mp_weapons_m14 hud_python zm_hud_icon_oneinch_clean hud_cymbal_monkey zom_hud_craftable_element_water zom_hud_craftable_element_lightning zom_hud_craftable_element_fire zom_hud_craftable_element_wind hud_obit_grenade_launcher_attach hud_obit_death_grenade_round menu_mp_weapons_knife menu_mp_weapons_1911 menu_mp_weapons_judge menu_mp_weapons_kard menu_mp_weapons_five_seven menu_mp_weapons_dual57s menu_mp_weapons_ak74u menu_mp_weapons_mp5 menu_mp_weapons_qcw menu_mp_weapons_870mcs menu_mp_weapons_rottweil72 menu_mp_weapons_saiga12 menu_mp_weapons_srm menu_mp_weapons_m16 menu_mp_weapons_saritch menu_mp_weapons_xm8 menu_mp_weapons_type95 menu_mp_weapons_tar21 menu_mp_weapons_galil menu_mp_weapons_fal menu_mp_weapons_rpd menu_mp_weapons_hamr menu_mp_weapons_dsr1 menu_mp_weapons_m82a menu_mp_weapons_rpg menu_mp_weapons_m32gl menu_zm_weapons_raygun menu_zm_weapons_jetgun menu_zm_weapons_shield menu_mp_weapons_ballistic_80 menu_mp_weapons_hk416 menu_mp_weapons_lsat menu_mp_weapons_an94 menu_mp_weapons_ar57 menu_mp_weapons_svu menu_zm_weapons_slipgun menu_zm_weapons_hell_shield menu_mp_weapons_minigun menu_zm_weapons_blundergat menu_zm_weapons_acidgat menu_mp_weapons_ak47 menu_mp_weapons_uzi menu_zm_weapons_thompson menu_zm_weapons_rnma voice_off_mute_xboxlive menu_zm_weapons_raygun_mark2 menu_zm_weapons_mc96 menu_zm_weapons_mg08 menu_zm_weapons_stg44 menu_mp_weapons_scar menu_mp_weapons_ksg menu_zm_weapons_mp40 menu_mp_weapons_evoskorpion menu_mp_weapons_ballista menu_zm_weapons_staff_air menu_zm_weapons_staff_fire menu_zm_weapons_staff_lightning menu_zm_weapons_staff_water menu_zm_weapons_tomb_shield hud_icon_claymore_256 hud_grenadeicon hud_icon_sticky_grenade hud_obit_knife hud_obit_ballistic_knife menu_mp_weapons_baretta menu_zm_weapons_taser menu_mp_weapons_baretta93r menu_mp_weapons_olympia hud_obit_death_crush menu_zm_weapons_bowie hud_icon_sticky_grenade", " ");
 
     foreach(shader in level.shader_weapons_list)

@@ -181,12 +181,7 @@ onPlayerSpawned()
 
             self iPrintLn("^7hello ^1" + self.name + " ^7& welcome to ^1mikey's zm mod^7!");
             self iPrintLn("^7hold [{+speed_throw}] & press [{+actionslot 1}] to open menu");
-            self iPrintLn("'last' is when ^12 ^7zombies are alive.");
-
-            wait 3;
-            self iPrintLn("[{+actionslot 1}] / [{+actionslot 2}] - up/down");
-            self iPrintLn("[{+gostand}] - select");
-            self iPrintLn("[{+activate}] - back");
+            self iPrintLn("'last' is when ^11 ^7zombie are alive.");
 
             self.first = false;
         }
