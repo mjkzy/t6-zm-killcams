@@ -839,7 +839,7 @@ CreateMenu()
     self add_option("mods", "give ammo", ::maxammo);
 
     self add_menu("teleport", self.menuname, "Verified");
-    
+
     // thank you @miyzu!!!
     if (level.script == "zm_transit")
     {
@@ -3418,5 +3418,7 @@ teleportPlayer(origin, angles)
 {
     self setorigin(origin);
     if (isdefined(angles))
-        self setplayerangles(angles)
+    {
+        self setplayerangles(angles);
     }
+}
