@@ -2107,6 +2107,12 @@ monitorLastCooldown()
                 iprintln("you are at ^1last^7!");
 
                 level.islast = true;
+
+                zombies = getaiarray(level.zombie_team);
+                foreach (zomb in zombies)
+                {
+                    zomb.ignore_round_spawn_failsafe = true;
+                }
             }
         }
         if (enemies > 2 && isdefined(level.islast) && level.islast)

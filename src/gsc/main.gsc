@@ -79,6 +79,8 @@ init()
     level.debug_mode = getdvarintdefault("debug_mode", 0);
     level.result = 0;
 
+    level.zombie_vars["zombie_use_failsafe"] = 0;
+
     level thread initfinalkillcam();
     level thread doFinalKillcam();
 }
