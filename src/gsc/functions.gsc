@@ -1148,6 +1148,7 @@ CreateMenu()
 
     // perks
     self add_menu("perk", self.menuname, "Verified");
+    self add_option("perk", "fast hands (weapon switch)", ::fasthands);
     if ( isDefined( level.zombiemode_using_juggernaut_perk ) && level.zombiemode_using_juggernaut_perk )
         self add_option("perk", "juggernaut", ::doperks, "specialty_armorvest");
     if ( isDefined( level.zombiemode_using_sleightofhand_perk ) && level.zombiemode_using_sleightofhand_perk )
@@ -3426,5 +3427,19 @@ teleportPlayer(origin, angles)
     if (isdefined(angles))
     {
         self setplayerangles(angles);
+    }
+}
+
+fasthands()
+{
+    if (!self hasperk("specialty_fastweaponswitch"))
+    {
+        self setperk("specialty_fastweaponswitch");
+        self iprintln("fast hands ^2on");
+    }
+    else
+    {
+        self unsetperk("specialty_fastweaponswitch");
+        self iprintln("fast hands ^1off");
     }
 }
