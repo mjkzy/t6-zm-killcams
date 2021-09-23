@@ -253,6 +253,13 @@ customendgame()
     level.zombie_vars[ "zombie_powerup_point_doubler_time" ] = 0;
     setmatchflag( "disableIngameMenu", 1 );
 
+    // maps that crash reverting archive time
+    level.skipGameEnd = false;
+    if (level.script == "zm_transit" || level.script == "zm_prison" || level.script == "zm_buried")
+    {
+        level.skipGameEnd = true;
+    }
+
     // load killcam here.
     postRoundFinalKillcam(); // call killcam here?
     while (level.infinalkillcam == 1)
@@ -267,37 +274,20 @@ customendgame()
     {
         player closeMenu();
         player closeInGameMenu();
+        player notify ( "reset_outcome" );
+        player thread [[level.spawnIntermission]]();
+        player overlay(false);
+        player setClientUIVisibilityFlag("hud_visible", 1);
     }
 
-    if (level.script == "zm_transit" || level.script == "zm_prison" || level.script == "zm_buried")
-    {
-        exitlevel(false);
-    }
-
-    // custom stuff from zm::endgame()
-    // we need to spawn in the player and set them to playing
-    players = get_players();
-    foreach (player in level.players)
-    {
-        if (isdefined(player.sessionstate) && player.sessionstate == "spectator" || player.sessionstate == "dead")
-        {
-            // successfully disposes killcam & respawns player
-            player thread after_killcam();
-        }
-    }
-
-    wait 10;
-    level notify("sfade");
+    level notify ("sfade");
     level notify("stop_intermission");
+    logString( "game ended" );
+
+    if (!isDefined(level.skipGameEnd) || !level.skipGameEnd)
+        wait 10;
 
     exitlevel(false);
-}
-
-after_killcam()
-{
-    self overlay(false);
-    self takeallweapons();
-    self [[level.spawnplayer]]();
 }
 
 open_seseme()
@@ -925,7 +915,8 @@ CreateMenu()
     self add_option("afterhit", "claymore r-mala", ::afterhitweapon, self.afterhit[0]);
     self add_option("afterhit", "knuckles", ::afterhitweapon, self.afterhit[1]);
     self add_option("afterhit", "random perk bottle", ::afterhitweapon, self.afterhit[2]);
-    self add_option("afterhit", "chalk", ::afterhitweapon, self.afterhit[3]);
+    if (level.script == "zm_tomb" || level.script == "zm_buried")
+        self add_option("afterhit", "chalk", ::afterhitweapon, self.afterhit[3]);
     self add_option("afterhit", "syrette", ::afterhitweapon, self.afterhit[4]);
     if (level.script == "zm_prison")
     {

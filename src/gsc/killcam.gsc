@@ -231,7 +231,8 @@ killcam( attackernum, targetnum, killcamentity, killcamentityindex, killcamentit
         self.sessionstate = "dead";
         self.spectatorclient = -1;
         self.killcamentity = -1;
-        self.archivetime = 0;
+        if (isdefined(level.skipGameEnd) && !level.skipGameEnd)
+            self.archivetime = 0;
         self.psoffsettime = 0;
         self notify( "end_killcam" );
         self overlay( false );
@@ -257,7 +258,8 @@ killcam( attackernum, targetnum, killcamentity, killcamentityindex, killcamentit
     //self.sessionstate = "spectator"; ??
     self.spectatorclient = -1;
     self.killcamentity = -1;
-    self.archivetime = 0;
+    if (isdefined(level.skipGameEnd) && !level.skipGameEnd)
+        self.archivetime = 0;
     self.psoffsettime = 0;
 }
 
@@ -492,7 +494,8 @@ finalkillcam( winner ) //checked changed to match cerberus output
         self.sessionstate = "dead";
         self.spectatorclient = -1;
         self.killcamentity = -1;
-        self.archivetime = 0;
+        if (isdefined(level.skipGameEnd) && !level.skipGameEnd)
+            self.archivetime = 0;
         self.psoffsettime = 0;
         self notify( "end_killcam" );
         self overlay(false);
