@@ -1348,16 +1348,6 @@ g_weapon(weapon)
     self givemaxammo(weapon);
 }
 
-/*
-// in the works
-g_claymore()
-{
-    self iprintln("not working rn :(");
-    //self thread maps/mp/zombies/_zm_weap_claymore::claymore_setup();
-    //self thread maps/mp/zombies/_zm_weap_claymore::show_claymore_hint( "claymore_purchased" );
-}
-*/
-
 doperks(perk)
 {
     self maps/mp/zombies/_zm_perks::give_perk(perk);
@@ -3418,7 +3408,7 @@ g_beacon()
 
 g_claymore()
 {
-    self thread maps/mp/zombies/_zm_weap_claymore::claymore_watch();
+    self thread maps/mp/zombies/_zm_weap_claymore::claymore_setup();
 }
 
 teleportPlayer(origin, angles)
