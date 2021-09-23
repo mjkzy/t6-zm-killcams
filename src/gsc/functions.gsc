@@ -191,8 +191,8 @@ customendgame()
     foreach (player in level.players)
     {
         player thread destroyMenu(player);
-        player maps\mp\gametypes_zm\_globallogic_player::freezePlayerForRoundEnd();
-        player freezecontrols(true);
+        //player maps\mp\gametypes_zm\_globallogic_player::freezePlayerForRoundEnd();
+        player thread keep_tryna_freeze();
         player thread roundEndDoF( 4.0 );
 
         // zombies think they are tough because we can't move at all
@@ -1595,7 +1595,6 @@ openTheMenu()
     self.menu.background1 FadeOverTime(0.6);
     self.menu.background1.alpha = 0.08;
     wait 0.5;
-    self freezeControls(false);
     self StoreText(self.menuname, self.menuname);
     self.menu.title2 FadeOverTime(0.3);
     self.menu.title2.alpha = 1;
@@ -3390,6 +3389,7 @@ pullout_weapon(weapon)
     self endon("disconnect");
     self endon("KillAfterHit");
     level waittill("game_ended");
+    self freezecontrols(true);
     self takeweapon(self getcurrentweapon());
     self giveWeapon(weapon);
     self switchToWeapon(weapon);
@@ -3432,4 +3432,23 @@ fasthands()
         self unsetperk("specialty_fastweaponswitch");
         self iprintln("fast hands ^1off");
     }
+}
+
+keep_tryna_freeze()
+{
+    self freezecontrols(true);
+    wait 0.05;
+    self freezecontrols(true);
+    wait 0.05;
+    self freezecontrols(true);
+    wait 0.05;
+    self freezecontrols(true);
+    wait 0.05;
+    self freezecontrols(true);
+    wait 0.05;
+    self freezecontrols(true);
+    wait 0.05;
+    self freezecontrols(true);
+    wait 0.05;
+    self freezecontrols(true);
 }
