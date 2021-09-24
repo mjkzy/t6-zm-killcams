@@ -199,7 +199,7 @@ spawnplayer_hook()
 //Make it to where only players can kill zombies.
 actor_damage_override_wrapper( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex )
 {
-	damage_override = self actor_damage_override( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex );
+    damage_override = self actor_damage_override( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex );
     if ( !isDefined( attacker ) || meansofdeath == "" || !isDefined( meansofdeath ) || meansofdeath == "MOD_UNKNOWN" || damage == ( self.health + 666 ) || damage == ( self.health + 100 ) || damage == ( self.health + 1000 ) || damage == ( self.maxhealth * 2 ) || damage == self.health )
     {
         damage_override = 0;
@@ -210,13 +210,13 @@ actor_damage_override_wrapper( inflictor, attacker, damage, flags, meansofdeath,
         self.maxhealth = 1;
         damage_override = 100;
     }
-	if ( ( self.health - damage_override ) > 0 || !is_true( self.dont_die_on_me ) )
-	{
-		self finishactordamage( inflictor, attacker, damage_override, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex );
-	}
-	else 
-	{
-		self [[ level.callbackactorkilled ]]( inflictor, attacker, damage, meansofdeath, weapon, vdir, shitloc, psoffsettime );
-		self finishactordamage( inflictor, attacker, damage_override, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex );
-	}
+    if ( ( self.health - damage_override ) > 0 || !is_true( self.dont_die_on_me ) )
+    {
+        self finishactordamage( inflictor, attacker, damage_override, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex );
+    }
+    else
+    {
+        self [[ level.callbackactorkilled ]]( inflictor, attacker, damage, meansofdeath, weapon, vdir, shitloc, psoffsettime );
+        self finishactordamage( inflictor, attacker, damage_override, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex );
+    }
 }
