@@ -16,9 +16,9 @@ jobs:
         with:
           ref: 'main'
       
-      - name: "Compile Release Mod"
+      - name: "Compile Test Mod"
         shell: "cmd"
-        run: cd tools && call compile.bat multifile zm-killcams.zip
+        run: cd tools && powershell "& .\compile.ps1"
         
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
