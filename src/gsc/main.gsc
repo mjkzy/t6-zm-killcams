@@ -105,7 +105,7 @@ onPlayerConnect()
     {
         level waittill("connected", player);
 
-        if (!isDefined(player.hud_damagefeedback))
+        if (!isdefined(player.hud_damagefeedback))
             player thread init_player_hitmarkers();
 
         player thread onPlayerSpawned();
@@ -135,7 +135,7 @@ onPlayerSpawned()
     {
         self waittill("spawned_player");
 
-        if (isdefined(level.intermission) && level.intermission)
+        if (is_true(level.intermission))
         {
             if (isalive(self))
             {
@@ -168,7 +168,7 @@ onPlayerSpawned()
         }
 
         // first spawn
-        if (isdefined(self.first) && self.first)
+        if (is_true(self.first))
         {
             if (!flag("initial_blackscreen_passed"))
             {
@@ -189,7 +189,7 @@ onPlayerSpawned()
 
 spawnplayer_hook()
 {
-    if (isdefined(level.infinalkillcam) && !level.infinalkillcam)
+    if (is_false(level.infinalkillcam))
     {
         thread [[level.spawnplayer_stub]]();
         return;

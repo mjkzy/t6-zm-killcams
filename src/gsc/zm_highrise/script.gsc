@@ -23,7 +23,7 @@ watchspringpaduse_hook()
 		self waittill("equipment_placed", weapon, weapname);
 		if (weapname == level.springpad_name)
 		{
-            if (isdefined(self.springpad_picked_up) && self.springpad_picked_up)
+            if (is_true(self.springpad_picked_up))
             {
                 self.springpad_picked_up = false;
                 self maps/mp/zombies/_zm_equip_springpad::cleanupoldspringpad();

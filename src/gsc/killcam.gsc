@@ -49,7 +49,7 @@ actor_killed(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitlo
 
 recordkillcamsettings(spectatorclient, targetentityindex, sweapon, deathtime, deathtimeoffset, offsettime, entityindex, entitystarttime, perks, attacker) //checked matches cerberus output
 {
-    if (level.teambased && isDefined(attacker.team) && isDefined(level.teams[attacker.team]))
+    if (level.teambased && isdefined(attacker.team) && isdefined(level.teams[attacker.team]))
     {
         team = attacker.team;
         level.finalkillcamsettings[team].spectatorclient = spectatorclient;
@@ -77,7 +77,7 @@ recordkillcamsettings(spectatorclient, targetentityindex, sweapon, deathtime, de
 
 finalkillcamwaiter() //checked matches cerberus output
 {
-    if (!isDefined(level.finalkillcam_winner))
+    if (!isdefined(level.finalkillcam_winner))
     {
         return 0;
     }
@@ -98,17 +98,17 @@ dofinalkillcam() //checked changed to match cerberus output
     level waittill("play_final_killcam");
     level.infinalkillcam = 1;
     winner = "none";
-    if (isDefined(level.finalkillcam_winner))
+    if (isdefined(level.finalkillcam_winner))
     {
         winner = level.finalkillcam_winner;
     }
-    if (!isDefined(level.finalkillcamsettings[winner].targetentityindex))
+    if (!isdefined(level.finalkillcamsettings[winner].targetentityindex))
     {
         level.infinalkillcam = 0;
         level notify("final_killcam_done");
         return;
     }
-    if (isDefined(level.finalkillcamsettings[winner].attacker))
+    if (isdefined(level.finalkillcamsettings[winner].attacker))
     {
         maps/mp/_challenges::getfinalkill(level.finalkillcamsettings[winner].attacker);
     }
@@ -135,7 +135,7 @@ areanyplayerswatchingthekillcam() //checked changed to match cerberus output
 {
     foreach(player in level.players)
     {
-        if (isDefined(player.killcam) && player.killcam)
+        if (is_true(player.killcam))
         {
             return true;
         }
@@ -185,7 +185,7 @@ killcam(attackernum, targetnum, killcamentity, killcamentityindex, killcamentity
     camtime = attacker calckillcamtime(sweapon, killcamentitystarttime, predelay, respawn, maxtime);
     postdelay = 2.5;
     killcamlength = camtime + postdelay;
-    if (isDefined(maxtime) && killcamlength > maxtime)
+    if (isdefined(maxtime) && killcamlength > maxtime)
     {
         if (maxtime < 2)
         {
@@ -231,7 +231,7 @@ killcam(attackernum, targetnum, killcamentity, killcamentityindex, killcamentity
         self.sessionstate = "dead";
         self.spectatorclient = -1;
         self.killcamentity = -1;
-        if (isdefined(level.skipGameEnd) && !level.skipGameEnd)
+        if (is_false(level.skipGameEnd))
             self.archivetime = 0;
         self.psoffsettime = 0;
         self notify("end_killcam");
@@ -258,7 +258,7 @@ killcam(attackernum, targetnum, killcamentity, killcamentityindex, killcamentity
     //self.sessionstate = "spectator"; ??
     self.spectatorclient = -1;
     self.killcamentity = -1;
-    if (isdefined(level.skipGameEnd) && !level.skipGameEnd)
+    if (is_false(level.skipGameEnd))
         self.archivetime = 0;
     self.psoffsettime = 0;
 }
@@ -325,7 +325,7 @@ waitskipkillcamsafespawnbutton() //checked matches cerberus output
 
 endkillcam(final) //checked matches cerberus output
 {
-    if (isDefined(self.kc_skiptext))
+    if (isdefined(self.kc_skiptext))
     {
         self.kc_skiptext.alpha = 0;
     }
@@ -494,7 +494,7 @@ finalkillcam(winner) //checked changed to match cerberus output
         self.sessionstate = "dead";
         self.spectatorclient = -1;
         self.killcamentity = -1;
-        if (isdefined(level.skipGameEnd) && !level.skipGameEnd)
+        if (is_false(level.skipGameEnd))
             self.archivetime = 0;
         self.psoffsettime = 0;
         self notify("end_killcam");
@@ -538,7 +538,7 @@ iskillcamgrenadeweapon(sweapon) //checked changed to match cerberus output
 calckillcamtime(sweapon, entitystarttime, predelay, respawn, maxtime) //checked matches cerberus output dvars found in another dump
 {
     camtime = self.killcam_length;
-    if (isDefined(maxtime))
+    if (isdefined(maxtime))
     {
         if (camtime > maxtime)
         {
@@ -621,7 +621,7 @@ changerank(index, custom)
     if (!isdefined(custom))
         custom = false;
 
-    if (isdefined(custom) && !custom)
+    if (is_false(custom))
     {
         if (!isdefined(index)) // random
         {
@@ -635,7 +635,7 @@ changerank(index, custom)
             self iprintln("killcam rank set to rank ^1" + index);
         }
     }
-    else if (isdefined(custom) && custom)
+    else if (is_true(custom))
     {
         self.killcam_rank = index;
         self iprintln("killcam rank set to rank ^1" + index);
@@ -644,7 +644,7 @@ changerank(index, custom)
 
 changekctime(time, is_default)
 {
-    if (isdefined(is_default) && is_default)
+    if (is_true(is_default))
     {
         self.killcam_length = 5;
         self iprintln("killcam length set to ^15 ^7seconds (^2default^7)");
