@@ -1187,6 +1187,7 @@ CreateMenu()
     self add_option("lobby", "timescale 0.5", ::timescale, 0.50);
     self add_option("lobby", "timescale 0.75", ::timescale, 0.75);
     self add_option("lobby", "timescale 1", ::timescale, 1);
+    self add_option("lobby", "timescale 2", ::timescale, 2);
 
     self add_menu("players", self.menuname, "Verified");
     for(i = 0; i < 17; i++)
