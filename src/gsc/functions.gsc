@@ -91,15 +91,15 @@ customendgame()
     if (game["state"] == "postgame" || level.gameEnded) return;
     if (isDefined(level.onEndGame)) [[level.onEndGame]](winner);
 
-    // visionSetNaked( "mpOutro", 2.0 );
+    // visionSetNaked("mpOutro", 2.0);
 
-    setMatchFlag( "enable_popups", 0 );
-    setmatchflag( "cg_drawSpectatorMessages", 0 );
-    setmatchflag( "game_ended", 1 );
+    setMatchFlag("enable_popups", 0);
+    setmatchflag("cg_drawSpectatorMessages", 0);
+    setmatchflag("game_ended", 1);
 
     players = get_players();
-    setmatchflag( "disableIngameMenu", 1 );
-    foreach ( player in players )
+    setmatchflag("disableIngameMenu", 1);
+    foreach(player in players)
     {
         player closemenu();
         player closeingamemenu();
@@ -110,26 +110,26 @@ customendgame()
         }
     }
 
-    level.zombie_vars[ "zombie_powerup_insta_kill_time" ] = 0;
-    level.zombie_vars[ "zombie_powerup_fire_sale_time" ] = 0;
-    level.zombie_vars[ "zombie_powerup_point_doubler_time" ] = 0;
+    level.zombie_vars["zombie_powerup_insta_kill_time"] = 0;
+    level.zombie_vars["zombie_powerup_fire_sale_time"] = 0;
+    level.zombie_vars["zombie_powerup_point_doubler_time"] = 0;
 
     game["state"] = "postgame";
     level.gameEndTime = getTime();
     level.gameEnded = true;
-    SetDvar( "g_gameEnded", 1 );
+    SetDvar("g_gameEnded", 1);
     level.inGracePeriod = false;
     level notify("game_ended");
     level notify("game_module_ended"); // fixes killcam fucking up on new round. (for nerds, when a new round occurs, it calls spawn player on spectators and resets archive time, BUT THEY ARE IN KILLCAM.)
     level.allowBattleChatter = true;
     maps\mp\gametypes_zm\_globallogic_audio::flushDialog();
 
-    if ( !IsDefined( game["overtime_round"] ) || wasLastRound() ) // Want to treat all overtime rounds as a single round
+    if (!IsDefined(game["overtime_round"]) || wasLastRound()) // Want to treat all overtime rounds as a single round
     {
         game["roundsplayed"]++;
         game["roundwinner"][game["roundsplayed"]] = winner;
 
-        if( level.teambased )
+        if (level.teambased)
         {
             game["roundswon"][winner]++;
         }
@@ -146,83 +146,83 @@ customendgame()
 
     level.finalKillCam_winnerPicked = true;
 
-    setGameEndTime( 0 );
+    setGameEndTime(0);
 
     maps\mp\gametypes_zm\_globallogic::updatePlacement();
 
-    maps\mp\gametypes_zm\_globallogic::updateRankedMatch( winner );
+    maps\mp\gametypes_zm\_globallogic::updateRankedMatch(winner);
 
     players = level.players;
 
     newTime = getTime();
     gameLength = getGameLength();
 
-    SetMatchTalkFlag( "EveryoneHearsEveryone", 1 );
+    SetMatchTalkFlag("EveryoneHearsEveryone", 1);
 
     bbGameOver = 0;
-    if ( isOneRound() || wasLastRound() )
+    if (isOneRound() || wasLastRound())
     {
         bbGameOver = 1;
 
-        if ( level.teambased )
+        if (level.teambased)
         {
-            if ( winner == "tie" )
+            if (winner == "tie")
             {
-                recordGameResult( "draw" );
+                recordGameResult("draw");
             }
             else
             {
-                recordGameResult( winner );
+                recordGameResult(winner);
             }
         }
         else
         {
-            if ( !isDefined( winner ) )
+            if (!isDefined(winner))
             {
-                recordGameResult( "draw" );
+                recordGameResult("draw");
             }
             else
             {
-                recordGameResult( winner.team );
+                recordGameResult(winner.team);
             }
         }
     }
 
-    foreach (player in level.players)
+    foreach(player in level.players)
     {
         player thread destroyMenu(player);
         //player maps\mp\gametypes_zm\_globallogic_player::freezePlayerForRoundEnd();
         player thread keep_tryna_freeze();
-        player thread roundEndDoF( 4.0 );
+        player thread roundEndDoF(4.0);
 
         // zombies think they are tough because we can't move at all
         player EnableInvulnerability();
         player maps\mp\gametypes_zm\_globallogic_ui::freeGameplayHudElems();
-        player maps\mp\gametypes_zm\_weapons::updateWeaponTimings( newTime );
-        player maps\mp\gametypes_zm\_globallogic::bbPlayerMatchEnd( gameLength, "", bbGameOver );
+        player maps\mp\gametypes_zm\_weapons::updateWeaponTimings(newTime);
+        player maps\mp\gametypes_zm\_globallogic::bbPlayerMatchEnd(gameLength, "", bbGameOver);
 
-        if( isPregame() )
+        if (isPregame())
         {
             index++;
             continue;
         }
 
-        if( level.rankedMatch || level.wagerMatch || level.leagueMatch )
+        if (level.rankedMatch || level.wagerMatch || level.leagueMatch)
         {
-            if ( isDefined( player.setPromotion ) )
+            if (isDefined(player.setPromotion))
             {
-                player setDStat( "AfterActionReportStats", "lobbyPopup", "promotion" );
+                player setDStat("AfterActionReportStats", "lobbyPopup", "promotion");
             }
             else
             {
-                player setDStat( "AfterActionReportStats", "lobbyPopup", "summary" );
+                player setDStat("AfterActionReportStats", "lobbyPopup", "summary");
             }
         }
     }
 
-    maps\mp\_music::setmusicstate( "SILENT" );
-    thread maps\mp\_challenges::roundEnd( winner );
-    if ( startNextRound( winner, " " ) )
+    maps\mp\_music::setmusicstate("SILENT");
+    thread maps\mp\_challenges::roundEnd(winner);
+    if (startNextRound(winner, " "))
     {
         return;
     }
@@ -231,27 +231,27 @@ customendgame()
     // After this the match is really ending //
     ///////////////////////////////////////////
 
-    if ( !isOneRound() )
+    if (!isOneRound())
     {
-        if ( isDefined( level.onRoundEndGame ) )
+        if (isDefined(level.onRoundEndGame))
         {
-            winner = [[level.onRoundEndGame]]( winner );
+            winner = [[level.onRoundEndGame]](winner);
         }
     }
 
-    skillUpdate( winner, level.teamBased );
-    recordLeagueWinner( winner );
+    skillUpdate(winner, level.teamBased);
+    recordLeagueWinner(winner);
 
     maps\mp\gametypes_zm\_globallogic::setTopPlayerStats();
-    thread maps\mp\_challenges::gameEnd( winner );
+    thread maps\mp\_challenges::gameEnd(winner);
 
     displayGameEnd(winner);
 
     stopallrumbles();
-    level.zombie_vars[ "zombie_powerup_insta_kill_time" ] = 0;
-    level.zombie_vars[ "zombie_powerup_fire_sale_time" ] = 0;
-    level.zombie_vars[ "zombie_powerup_point_doubler_time" ] = 0;
-    setmatchflag( "disableIngameMenu", 1 );
+    level.zombie_vars["zombie_powerup_insta_kill_time"] = 0;
+    level.zombie_vars["zombie_powerup_fire_sale_time"] = 0;
+    level.zombie_vars["zombie_powerup_point_doubler_time"] = 0;
+    setmatchflag("disableIngameMenu", 1);
 
     // maps that crash reverting archive time
     level.skipGameEnd = false;
@@ -270,11 +270,11 @@ customendgame()
     level.intermission = true;
 
     //regain players array since some might've disconnected during the wait above
-    foreach (player in level.players)
+    foreach(player in level.players)
     {
         player closeMenu();
         player closeInGameMenu();
-        player notify ( "reset_outcome" );
+        player notify ("reset_outcome");
         player thread [[level.spawnIntermission]]();
         player overlay(false);
         player setClientUIVisibilityFlag("hud_visible", 1);
@@ -282,7 +282,7 @@ customendgame()
 
     level notify ("sfade");
     level notify("stop_intermission");
-    logString( "game ended" );
+    logString("game ended");
 
     if (!isDefined(level.skipGameEnd) || !level.skipGameEnd)
         wait 10;
@@ -292,7 +292,7 @@ customendgame()
 
 open_seseme()
 {
-    flag_wait( "initial_blackscreen_passed" );
+    flag_wait("initial_blackscreen_passed");
     setdvar("zombie_unlock_all", 1);
     flag_set("power_on");
     players = get_players();
@@ -300,7 +300,7 @@ open_seseme()
     for(i = 0; i < zombie_doors.size; i++)
     {
         zombie_doors[i] notify("trigger");
-        if(is_true(zombie_doors[i].power_door_ignore_flag_wait))
+        if (is_true(zombie_doors[i].power_door_ignore_flag_wait))
         {
             zombie_doors[i] notify("power_on");
         }
@@ -323,27 +323,27 @@ open_seseme()
 
 init_player_hitmarkers()
 {
-    self.hud_damagefeedback = newdamageindicatorhudelem( self );
+    self.hud_damagefeedback = newdamageindicatorhudelem(self);
     self.hud_damagefeedback.horzalign = "center";
     self.hud_damagefeedback.vertalign = "middle";
     self.hud_damagefeedback.x = -12;
     self.hud_damagefeedback.y = -12;
     self.hud_damagefeedback.alpha = 0;
     self.hud_damagefeedback.archived = 1;
-    self.hud_damagefeedback.color = ( 1, 1, 1 );
-    self.hud_damagefeedback setshader( "damage_feedback", 24, 48 );
-    self.hud_damagefeedback_red = newdamageindicatorhudelem( self );
+    self.hud_damagefeedback.color = (1, 1, 1);
+    self.hud_damagefeedback setshader("damage_feedback", 24, 48);
+    self.hud_damagefeedback_red = newdamageindicatorhudelem(self);
     self.hud_damagefeedback_red.horzalign = "center";
     self.hud_damagefeedback_red.vertalign = "middle";
     self.hud_damagefeedback_red.x = -12;
     self.hud_damagefeedback_red.y = -12;
     self.hud_damagefeedback_red.alpha = 0;
     self.hud_damagefeedback_red.archived = 1;
-    self.hud_damagefeedback_red.color = ( 1, 0, 0 );
-    self.hud_damagefeedback_red setshader( "damage_feedback", 24, 48 );
+    self.hud_damagefeedback_red.color = (1, 0, 0);
+    self.hud_damagefeedback_red setshader("damage_feedback", 24, 48);
 }
 
-updatedamagefeedback( mod, inflictor, death ) //checked matches cerberus output
+updatedamagefeedback(mod, inflictor, death) //checked matches cerberus output
 {
     if (!isplayer(self) || isDefined(self.disable_hitmarkers)) return;
     if (isDefined(mod) && mod != "MOD_CRUSH" && mod != "MOD_GRENADE_SPLASH" && mod != "MOD_HIT_BY_OBJECT")
@@ -356,32 +356,32 @@ updatedamagefeedback( mod, inflictor, death ) //checked matches cerberus output
     return 1;
 }
 
-displayGameEnd( winner )
+displayGameEnd(winner)
 {
-    foreach (player in level.players)
+    foreach(player in level.players)
     {
-        player thread [[level.onTeamOutcomeNotify]]( winner, false, "" );
-        player setClientUIVisibilityFlag( "hud_visible", 0 );
-        player setClientUIVisibilityFlag( "g_compassShowEnemies", 0 );
+        player thread [[level.onTeamOutcomeNotify]](winner, false, "");
+        player setClientUIVisibilityFlag("hud_visible", 0);
+        player setClientUIVisibilityFlag("g_compassShowEnemies", 0);
     }
 
-    roundEndWait( level.postRoundTime, true );
+    roundEndWait(level.postRoundTime, true);
 }
 
-teamoutcomenotify( winner, isround, endreasontext )
+teamoutcomenotify(winner, isround, endreasontext)
 {
-    self endon( "disconnect" );
-    self notify( "reset_outcome" );
+    self endon("disconnect");
+    self notify("reset_outcome");
     team = level.last_attacker.team;
 
-    while ( self.doingnotify )
+    while (self.doingnotify)
     {
         wait 0.05;
     }
-    self endon( "reset_outcome" );
+    self endon("reset_outcome");
     headerfont = "extrabig";
     font = "default";
-    if ( self issplitscreen() )
+    if (self issplitscreen())
     {
         titlesize = 2;
         textsize = 1.5;
@@ -396,16 +396,16 @@ teamoutcomenotify( winner, isround, endreasontext )
         spacing = 25;
     }
     duration = 60000;
-    outcometitle = createfontstring( headerfont, titlesize );
-    outcometitle setpoint( "TOP", undefined, 0, 30 );
+    outcometitle = createfontstring(headerfont, titlesize);
+    outcometitle setpoint("TOP", undefined, 0, 30);
     outcometitle.glowalpha = 1;
     outcometitle.hidewheninmenu = 0;
     outcometitle.archived = 0;
     outcometitle.immunetodemogamehudsettings = 1;
     outcometitle.immunetodemofreecamera = 1;
-    outcometext = createfontstring( font, 2 );
-    outcometext setparent( outcometitle );
-    outcometext setpoint( "TOP", "BOTTOM", 0, 0 );
+    outcometext = createfontstring(font, 2);
+    outcometext setparent(outcometitle);
+    outcometext setpoint("TOP", "BOTTOM", 0, 0);
     outcometext.glowalpha = 1;
     outcometext.hidewheninmenu = 0;
     outcometext.archived = 0;
@@ -413,84 +413,84 @@ teamoutcomenotify( winner, isround, endreasontext )
     outcometext.immunetodemofreecamera = 1;
 
     if (level.round_based)
-        outcometitle settext( game[ "strings" ][ "round_win" ] );
+        outcometitle settext(game["strings"]["round_win"]);
     else
-        outcometitle settext( game[ "strings" ][ "victory" ] );
-    outcometitle.color = ( 0.42, 0.68, 0.46 );
-    outcometext settext( "Zombies Eliminated" );
-    outcometitle setcod7decodefx( 200, duration, 600 );
-    outcometext setpulsefx( 100, duration, 1000 );
+        outcometitle settext(game["strings"]["victory"]);
+    outcometitle.color = (0.42, 0.68, 0.46);
+    outcometext settext("Zombies Eliminated");
+    outcometitle setcod7decodefx(200, duration, 600);
+    outcometext setpulsefx(100, duration, 1000);
     iconspacing = 100;
-    currentx = ( (1 * -1) * iconspacing ) / 2;
+    currentx = ((1 * -1) * iconspacing) / 2;
     teamicons = [];
-    teamicons[ team ] = createicon( determineTeamLogo(), iconsize, iconsize );
-    teamicons[ team ] setparent( outcometext );
-    teamicons[ team ] setpoint( "TOP", "BOTTOM", currentx, spacing );
-    teamicons[ team ].hidewheninmenu = 0;
-    teamicons[ team ].archived = 0;
-    teamicons[ team ].alpha = 0;
-    teamicons[ team ].immunetodemogamehudsettings = 1;
-    teamicons[ team ].immunetodemofreecamera = 1;
-    teamicons[ team ] fadeovertime( 0.5 );
-    teamicons[ team ].alpha = 1;
+    teamicons[team] = createicon(determineTeamLogo(), iconsize, iconsize);
+    teamicons[team] setparent(outcometext);
+    teamicons[team] setpoint("TOP", "BOTTOM", currentx, spacing);
+    teamicons[team].hidewheninmenu = 0;
+    teamicons[team].archived = 0;
+    teamicons[team].alpha = 0;
+    teamicons[team].immunetodemogamehudsettings = 1;
+    teamicons[team].immunetodemofreecamera = 1;
+    teamicons[team] fadeovertime(0.5);
+    teamicons[team].alpha = 1;
     currentx += iconspacing;
-    foreach ( enemyteam in level.teams )
+    foreach(enemyteam in level.teams)
     {
-        if ( enemyteam != team )
+        if (enemyteam != team)
         {
-            teamicons[ enemyteam ] = createicon( "hud_status_dead", iconsize, iconsize );
-            teamicons[ enemyteam ] setparent( outcometext );
-            teamicons[ enemyteam ] setpoint( "TOP", "BOTTOM", currentx, spacing );
-            teamicons[ enemyteam ].hidewheninmenu = 0;
-            teamicons[ enemyteam ].archived = 0;
-            teamicons[ enemyteam ].immunetodemogamehudsettings = 1;
-            teamicons[ enemyteam ].immunetodemofreecamera = 1;
-            teamicons[ enemyteam ] fadeovertime( 0.5 );
-            teamicons[ enemyteam ].alpha = 1;
+            teamicons[enemyteam] = createicon("hud_status_dead", iconsize, iconsize);
+            teamicons[enemyteam] setparent(outcometext);
+            teamicons[enemyteam] setpoint("TOP", "BOTTOM", currentx, spacing);
+            teamicons[enemyteam].hidewheninmenu = 0;
+            teamicons[enemyteam].archived = 0;
+            teamicons[enemyteam].immunetodemogamehudsettings = 1;
+            teamicons[enemyteam].immunetodemofreecamera = 1;
+            teamicons[enemyteam] fadeovertime(0.5);
+            teamicons[enemyteam].alpha = 1;
             currentx += iconspacing;
         }
     }
     teamscores = [];
-    teamscores[ team ] = createfontstring( font, titlesize );
-    teamscores[ team ] setparent( teamicons[ team ] );
-    teamscores[ team ] setpoint( "TOP", "BOTTOM", 0, spacing );
-    teamscores[ team ].glowalpha = 1;
+    teamscores[team] = createfontstring(font, titlesize);
+    teamscores[team] setparent(teamicons[team]);
+    teamscores[team] setpoint("TOP", "BOTTOM", 0, spacing);
+    teamscores[team].glowalpha = 1;
     if (level.round_based)
-        teamscores[ team ] setvalue( randomintrange(0, 4) );
+        teamscores[team] setvalue(randomintrange(0, 4));
     else
-        teamscores[ team ] setvalue( 4 );
-    teamscores[ team ].hidewheninmenu = 0;
-    teamscores[ team ].archived = 0;
-    teamscores[ team ].immunetodemogamehudsettings = 1;
-    teamscores[ team ].immunetodemofreecamera = 1;
-    teamscores[ team ] setpulsefx( 100, duration, 1000 );
+        teamscores[team] setvalue(4);
+    teamscores[team].hidewheninmenu = 0;
+    teamscores[team].archived = 0;
+    teamscores[team].immunetodemogamehudsettings = 1;
+    teamscores[team].immunetodemofreecamera = 1;
+    teamscores[team] setpulsefx(100, duration, 1000);
 
-    foreach ( enemyteam in level.teams )
+    foreach(enemyteam in level.teams)
     {
-        if ( enemyteam != team )
+        if (enemyteam != team)
         {
-            teamscores[ enemyteam ] = createfontstring( headerfont, titlesize );
-            teamscores[ enemyteam ] setparent( teamicons[ enemyteam ] );
-            teamscores[ enemyteam ] setpoint( "TOP", "BOTTOM", 0, spacing );
-            teamscores[ enemyteam ].glowalpha = 1;
-            teamscores[ enemyteam ] setvalue( level.enemy_score );
-            teamscores[ enemyteam ].hidewheninmenu = 0;
-            teamscores[ enemyteam ].archived = 0;
-            teamscores[ enemyteam ].immunetodemogamehudsettings = 1;
-            teamscores[ enemyteam ].immunetodemofreecamera = 1;
-            teamscores[ enemyteam ] setpulsefx( 100, duration, 1000 );
+            teamscores[enemyteam] = createfontstring(headerfont, titlesize);
+            teamscores[enemyteam] setparent(teamicons[enemyteam]);
+            teamscores[enemyteam] setpoint("TOP", "BOTTOM", 0, spacing);
+            teamscores[enemyteam].glowalpha = 1;
+            teamscores[enemyteam] setvalue(level.enemy_score);
+            teamscores[enemyteam].hidewheninmenu = 0;
+            teamscores[enemyteam].archived = 0;
+            teamscores[enemyteam].immunetodemogamehudsettings = 1;
+            teamscores[enemyteam].immunetodemofreecamera = 1;
+            teamscores[enemyteam] setpulsefx(100, duration, 1000);
         }
     }
     font = "objective";
-    matchbonus = createfontstring( font, 2 );
-    matchbonus setparent( outcometext );
-    matchbonus setpoint( "TOP", "BOTTOM", 0, iconsize + ( spacing * 3 ) + teamscores[ team ].height );
+    matchbonus = createfontstring(font, 2);
+    matchbonus setparent(outcometext);
+    matchbonus setpoint("TOP", "BOTTOM", 0, iconsize + (spacing * 3) + teamscores[team].height);
     matchbonus.glowalpha = 1;
     matchbonus.hidewheninmenu = 0;
     matchbonus.archived = 0;
-    matchbonus.label = game[ "strings" ][ "match_bonus" ];
-    matchbonus setvalue( randomintrange(2000, 3500) );
-    self thread maps\mp\gametypes_zm\_hud_message::resetoutcomenotify( teamicons, teamscores, outcometitle, outcometext );
+    matchbonus.label = game["strings"]["match_bonus"];
+    matchbonus setvalue(randomintrange(2000, 3500));
+    self thread maps\mp\gametypes_zm\_hud_message::resetoutcomenotify(teamicons, teamscores, outcometitle, outcometext);
 }
 
 // shader, logos, team icons
@@ -549,13 +549,13 @@ drawZombiesCounter()
     for(;;)
     {
         enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
-        if ( enemies == 0 )
+        if (enemies == 0)
             level.zombiesCounter.label = &"Zombies: ^1";
-        else if ( enemies <= 3 )
+        else if (enemies <= 3)
             level.zombiesCounter.label = &"Zombies: ^3";
-        else if ( enemies != 0 )
+        else if (enemies != 0)
             level.zombiesCounter.label = &"Zombies: ^2";
-        level.zombiesCounter setValue( enemies );
+        level.zombiesCounter setValue(enemies);
         wait 0.05;
     }
 }
@@ -584,7 +584,7 @@ checkGun(weap)
 {
     self.allWeaps = [];
     self.allWeaps = self getWeaponsList();
-    foreach (weapon in self.allWeaps)
+    foreach(weapon in self.allWeaps)
     {
         if (isSubStr(weapon, weap))
             return true;
@@ -791,10 +791,10 @@ DowngradeWeapon()
 
 get_upgrade(weapon)
 {
-    if(IsDefined(level.zombie_weapons[weapon].upgrade_name) && IsDefined(level.zombie_weapons[weapon]))
-        return get_upgrade_weapon(weapon, 0 );
+    if (IsDefined(level.zombie_weapons[weapon].upgrade_name) && IsDefined(level.zombie_weapons[weapon]))
+        return get_upgrade_weapon(weapon, 0);
     else
-        return get_upgrade_weapon(weapon, 1 );
+        return get_upgrade_weapon(weapon, 1);
 }
 
 CreateMenu()
@@ -1140,23 +1140,23 @@ CreateMenu()
     // perks
     self add_menu("perk", self.menuname, "Verified");
     self add_option("perk", "fast hands (weapon switch)", ::fasthands);
-    if ( isDefined( level.zombiemode_using_juggernaut_perk ) && level.zombiemode_using_juggernaut_perk )
+    if (isDefined(level.zombiemode_using_juggernaut_perk) && level.zombiemode_using_juggernaut_perk)
         self add_option("perk", "juggernaut", ::doperks, "specialty_armorvest");
-    if ( isDefined( level.zombiemode_using_sleightofhand_perk ) && level.zombiemode_using_sleightofhand_perk )
+    if (isDefined(level.zombiemode_using_sleightofhand_perk) && level.zombiemode_using_sleightofhand_perk)
         self add_option("perk", "fast reload", ::doperks, "specialty_fastreload");
-    if ( isDefined( level.zombiemode_using_doubletap_perk ) && level.zombiemode_using_doubletap_perk )
+    if (isDefined(level.zombiemode_using_doubletap_perk) && level.zombiemode_using_doubletap_perk)
         self add_option("perk", "double tap", ::doperks, "specialty_rof");
-    if ( isDefined( level.zombiemode_using_deadshot_perk ) && level.zombiemode_using_deadshot_perk )
+    if (isDefined(level.zombiemode_using_deadshot_perk) && level.zombiemode_using_deadshot_perk)
         self add_option("perk", "deadshot", ::doperks, "specialty_deadshot");
-    if ( isDefined( level.zombiemode_using_tombstone_perk ) && level.zombiemode_using_tombstone_perk )
+    if (isDefined(level.zombiemode_using_tombstone_perk) && level.zombiemode_using_tombstone_perk)
         self add_option("perk", "tombstone", ::doperks, "specialty_scavenger");
-    if ( isDefined( level.zombiemode_using_additionalprimaryweapon_perk ) && level.zombiemode_using_additionalprimaryweapon_perk )
+    if (isDefined(level.zombiemode_using_additionalprimaryweapon_perk) && level.zombiemode_using_additionalprimaryweapon_perk)
         self add_option("perk", "mule kick", ::doperks, "specialty_additionalprimaryweapon");
-    if ( isDefined( level.zombiemode_using_chugabud_perk ) && level.zombiemode_using_chugabud_perk )
+    if (isDefined(level.zombiemode_using_chugabud_perk) && level.zombiemode_using_chugabud_perk)
         self add_option("perk", "quick revive", ::doperks, "specialty_quickrevive");
-    if ( isDefined( level.zombiemode_using_electric_cherry_perk ) && level.zombiemode_using_electric_cherry_perk )
+    if (isDefined(level.zombiemode_using_electric_cherry_perk) && level.zombiemode_using_electric_cherry_perk)
         self add_option("perk", "electric cherry", ::doperks, "specialty_grenadepulldeath");
-    if ( isDefined( level.zombiemode_using_vulture_perk ) && level.zombiemode_using_vulture_perk )
+    if (isDefined(level.zombiemode_using_vulture_perk) && level.zombiemode_using_vulture_perk)
         self add_option("perk", "vulture aid", ::doperks, "specialty_nomotionsensor");
 
     // zombies
@@ -1167,7 +1167,7 @@ CreateMenu()
     self add_option("zombies", "individual zombies menu", ::submenu, "zombies_i", "individual zombies menu");
 
     self add_menu("zombies_i", "zombies", "Verified");
-    for (i = 0; i < 17; i++)
+    for(i = 0; i < 17; i++)
     {
         self add_menu("zOzt " + i, "zombies_i", "Verified");
     }
@@ -1189,7 +1189,7 @@ CreateMenu()
     self add_option("lobby", "timescale 1", ::timescale, 1);
 
     self add_menu("players", self.menuname, "Verified");
-    for (i = 0; i < 17; i++)
+    for(i = 0; i < 17; i++)
     {
         self add_menu("pOpt " + i, "players", "Verified");
     }
@@ -1304,7 +1304,7 @@ switchteams(player)
     if (player.team == "allies")
     {
         player.joining_team = "axis";
-        player.leaving_team = player.pers[ "team" ];
+        player.leaving_team = player.pers["team"];
         player.team = "axis";
         player.pers["team"] = "axis";
         player.sessionteam = "axis";
@@ -1313,7 +1313,7 @@ switchteams(player)
     else
     {
         player.joining_team = "allies";
-        player.leaving_team = player.pers[ "team" ];
+        player.leaving_team = player.pers["team"];
         player.team = "allies";
         player.pers["team"] = "allies";
         player.sessionteam = "allies";
@@ -1326,7 +1326,7 @@ switchteams(player)
     else
         isdefault = "(^1not default^7)";
 
-    player notify( "joined_team" );
+    player notify("joined_team");
     player iprintln("switched to ^1" + player.team + " ^7team " + isdefault);
     if (self != player)
         self iprintln("changed player team to ^1" + player.team + " ^7team " + isdefault);
@@ -1388,26 +1388,26 @@ addpoints(points)
 // rewrote
 spawnbot()
 {
-    spawnpoints = getstructarray( "initial_spawn_points", "targetname" );
-    spawnpoint = getfreespawnpoint( spawnpoints );
+    spawnpoints = getstructarray("initial_spawn_points", "targetname");
+    spawnpoint = getfreespawnpoint(spawnpoints);
     bot = addtestclient();
     if (!isDefined(bot))
         return;
 
     bot.pers["isBot"] = true;
     bot.equipment_enabled = false;
-    yaw = spawnpoint.angles[ 1 ];
-    bot thread maps/mp/zombies/_zm::zbot_spawn_think( spawnpoint.origin, yaw );
+    yaw = spawnpoint.angles[1];
+    bot thread maps/mp/zombies/_zm::zbot_spawn_think(spawnpoint.origin, yaw);
 
     team = level.players[0].team;
     bot.switching_teams = 1;
     bot.joining_team = team;
-    bot.leaving_team = self.pers[ "team" ];
+    bot.leaving_team = self.pers["team"];
     bot.team = team;
     bot.pers["team"] = team;
     bot.sessionteam = team;
     bot._encounters_team = (team == "axis" ? "A" : "B");
-    bot notify( "joined_team" );
+    bot notify("joined_team");
 
     bot waittill("spawned_player");
     godmode(bot, true);
@@ -1421,7 +1421,7 @@ makebotinvis()
     if (!isdefined(level.invisbot)) level.invisbot = false;
     if (!level.invisbot)
     {
-        foreach (bot in level.players)
+        foreach(bot in level.players)
         {
             if (isDefined(bot.pers["isBot"]) && bot.pers["isBot"])
             {
@@ -1434,7 +1434,7 @@ makebotinvis()
     }
     else
     {
-        foreach (bot in level.players)
+        foreach(bot in level.players)
         {
             if (isDefined(bot.pers["isBot"]) && bot.pers["isBot"])
             {
@@ -1461,11 +1461,11 @@ keepinpos()
 
 tpbotstocrosshair()
 {
-    foreach (bot in level.players)
+    foreach(bot in level.players)
     {
         if (isDefined(bot.pers["isBot"]) && bot.pers["isBot"])
         {
-            bot setorigin(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
+            bot setorigin(bullettrace(self gettagorigin("j_head"), self gettagorigin("j_head") + anglestoforward(self getplayerangles()) * 1000000, 0, self)["position"]);
         }
     }
     self iprintln("bots ^1teleported ^7to crosshair^7");
@@ -1474,22 +1474,22 @@ tpbotstocrosshair()
 // i made this just for jimbo idk if it works lul
 tp_zombies(ai_num)
 {
-    zombies = getaiarray( level.zombie_team );
+    zombies = getaiarray(level.zombie_team);
     if (!isdefined(ai_num))
     {
-        foreach (zombie in zombies)
+        foreach(zombie in zombies)
         {
-            zombie forceteleport(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
+            zombie forceteleport(bullettrace(self gettagorigin("j_head"), self gettagorigin("j_head") + anglestoforward(self getplayerangles()) * 1000000, 0, self)["position"]);
         }
         self iprintln("zombies ^1teleported ^7to crosshair^7");
     }
     else
     {
-        foreach (zombie in zombies)
+        foreach(zombie in zombies)
         {
             if (zombie get_ai_number() == ai_num)
             {
-                zombie forceteleport(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
+                zombie forceteleport(bullettrace(self gettagorigin("j_head"), self gettagorigin("j_head") + anglestoforward(self getplayerangles()) * 1000000, 0, self)["position"]);
                 break;
             }
         }
@@ -1649,7 +1649,7 @@ moveItTo(axis, position, time)
 {
     self moveOverTime(time);
 
-    if(axis=="x")
+    if (axis=="x")
         self.x = position;
     else
         self.y = position;
@@ -1725,7 +1725,7 @@ StoreText(menu, title)
     self.menu.title2 = drawText(title, "default", 1.2, 255+self.menuxpos, 0, (1, 1, 1), 0, 3);
     self.menu.title2 FadeOverTime(0);
     self.menu.title2.alpha = 1;
-    self.menu.title2 setPoint( "LEFT", "LEFT", 550+self.menuxpos, -161);
+    self.menu.title2 setPoint("LEFT", "LEFT", 550+self.menuxpos, -161);
     for(i = 0; i < self.menu.menuopt[menu].size; i++)
     {
         string +=self.menu.menuopt[menu][i] + "\n";
@@ -1740,18 +1740,18 @@ StoreText(menu, title)
     self.statuss = drawText("by @mjkzys^7", "default", 1.1, 0+self.menuxpos, 0, (1, 1, 1), 0, 4);
     self.statuss FadeOverTime(0);
     self.statuss.alpha = 1;
-    self.statuss setPoint( "LEFT", "LEFT", 550+self.menuxpos, 99);
+    self.statuss setPoint("LEFT", "LEFT", 550+self.menuxpos, 99);
     self.menu.options destroy();
     self.menu.options = drawText(string, "objective", 1.2, 290+self.menuxpos, 90, (1, 1, 1), 0, 4);
     self.menu.options FadeOverTime(0.5);
     self.menu.options.alpha = 1;
-    self.menu.options setPoint( "LEFT", "LEFT", 550+self.menuxpos, -148);
+    self.menu.options setPoint("LEFT", "LEFT", 550+self.menuxpos, -148);
 }
 
 MenuInit()
 {
     self endon("disconnect");
-    self endon( "destroyMenu" );
+    self endon("destroyMenu");
     level endon("game_ended");
     level endon("manual_end_game");
 
@@ -1774,7 +1774,7 @@ MenuInit()
         {
             if (self useButtonPressed())
             {
-                if(isDefined(self.menu.previousmenu[self.menu.currentmenu]))
+                if (isDefined(self.menu.previousmenu[self.menu.currentmenu]))
                 {
                     self submenu(self.menu.previousmenu[self.menu.currentmenu], formatLocal(self.menu.previousmenu[self.menu.currentmenu]));
                 }
@@ -1785,7 +1785,7 @@ MenuInit()
                 }
                 wait 0.2;
             }
-            else if(self actionSlotOneButtonPressed() || self actionSlotTwoButtonPressed())
+            else if (self actionSlotOneButtonPressed() || self actionSlotTwoButtonPressed())
             {
                 self.menu.curs[self.menu.currentmenu] += (Iif(self actionSlotTwoButtonPressed(), 1, -1));
                 self.menu.curs[self.menu.currentmenu] = (Iif(self.menu.curs[self.menu.currentmenu] < 0, self.menu.menuopt[self.menu.currentmenu].size-1, Iif(self.menu.curs[self.menu.currentmenu] > self.menu.menuopt[self.menu.currentmenu].size-1, 0, self.menu.curs[self.menu.currentmenu])));
@@ -1793,7 +1793,7 @@ MenuInit()
                 self.menu.counter1 setValue(self.menu.menuopt[self.menu.currentmenu].size);
                 self updateScrollbar();
             }
-            else if(self jumpButtonPressed())
+            else if (self jumpButtonPressed())
             {
                 self thread [[self.menu.menufunc[self.menu.currentmenu][self.menu.curs[self.menu.currentmenu]]]](self.menu.menuinput[self.menu.currentmenu][self.menu.curs[self.menu.currentmenu]], self.menu.menuinput1[self.menu.currentmenu][self.menu.curs[self.menu.currentmenu]]);
                 wait 0.2;
@@ -1867,7 +1867,7 @@ monitorOverflow()
     level endon("disconnect");
     for(;;)
     {
-        if(level.stringCount >= 60)
+        if (level.stringCount >= 60)
         {
             level.anchorText clearAllTextAfterHudElem();
             level.stringCount = 0;
@@ -1885,7 +1885,7 @@ monitorOverflow()
 setSafeText(player, text)
 {
     stringId = player getStringId(text);
-    if(stringId == -1)
+    if (stringId == -1)
     {
         player addStringTableEntry(text);
         stringId = player getStringId(text);
@@ -1915,7 +1915,7 @@ lookUpStringById(id)
     string = "";
     foreach(entry in self.stringTable)
     {
-        if(entry.id == id)
+        if (entry.id == id)
         {
             string = entry.string;
             break;
@@ -1929,7 +1929,7 @@ getStringId(string)
     id = -1;
     foreach(entry in self.stringTable)
     {
-        if(entry.string == string)
+        if (entry.string == string)
         {
             id = entry.id;
             break;
@@ -1943,7 +1943,7 @@ getStringTableEntry(id)
     stringTableEntry = -1;
     foreach(entry in self.stringTable)
     {
-        if(entry.id == id)
+        if (entry.id == id)
         {
             stringTableEntry = entry;
             break;
@@ -1967,7 +1967,7 @@ purgeTextTable()
     textTable = [];
     foreach(entry in self.textTable)
     {
-        if(entry.id != -1)
+        if (entry.id != -1)
         {
             textTable[textTable.size] = entry;
         }
@@ -1990,7 +1990,7 @@ editTextTableEntry(id, stringId)
 {
     foreach(entry in self.textTable)
     {
-        if(entry.id == id)
+        if (entry.id == id)
         {
             entry.stringId = stringId;
             break;
@@ -2002,7 +2002,7 @@ deleteTextTableEntry(id)
 {
     foreach(entry in self.textTable)
     {
-        if(entry.id == id)
+        if (entry.id == id)
         {
             entry.id = -1;
             entry.stringId = -1;
@@ -2012,7 +2012,7 @@ deleteTextTableEntry(id)
 
 clear(player)
 {
-    if(self.type == "text") player deleteTextTableEntry(self.textTableIndex);
+    if (self.type == "text") player deleteTextTableEntry(self.textTableIndex);
     self destroy();
 }
 
@@ -2090,7 +2090,7 @@ monitorLastCooldown()
                 level.islast = true;
 
                 zombies = getaiarray(level.zombie_team);
-                foreach (zomb in zombies)
+                foreach(zomb in zombies)
                 {
                     zomb.ignore_round_spawn_failsafe = true;
                 }
@@ -2124,7 +2124,7 @@ aimboobs()
     }
     else
     {
-        self notify( "aimbot" );
+        self notify("aimbot");
         self iprintln("aimbot ^1off");
     }
     self.aimbot = !self.aimbot;
@@ -2132,16 +2132,16 @@ aimboobs()
 
 aimbot()
 {
-    self endon( "disconnect" );
-    self endon( "aimbot" );
+    self endon("disconnect");
+    self endon("aimbot");
     level endon("game_ended");
     for(;;)
     {
-        self waittill( "weapon_fired" );
+        self waittill("weapon_fired");
         abc = 0;
         killed = false;
-        enemy = getaiarray( level.zombie_team );
-        foreach (zombie in enemy)
+        enemy = getaiarray(level.zombie_team);
+        foreach(zombie in enemy)
         {
             if (isalive(zombie) && iscool(zombie) && !killed)
             {
@@ -2149,12 +2149,12 @@ aimbot()
                 {
                     if (isdefined(self.aimbotweapon) && self getcurrentweapon() == self.aimbotweapon)
                     {
-                        zombie dodamage( zombie.health + 100, ( 0, 0, 0 ) );
+                        zombie dodamage(zombie.health + 100, (0, 0, 0));
                         self thread dohitmarkerok();
                         self.score += 50;
                         killed = true;
-                        zombie thread [[ level.callbackactorkilled ]]( self, self, (zombie.health + 100), "MOD_RIFLE_BULLET", self getcurrentweapon(), ( 0, 0, 0 ), ( 0, 0, 0 ), 0 );
-                        //self [[ level.callbackactorkilled ]]( inflictor, attacker, damage, meansofdeath, weapon, vdir, shitloc, psoffsettime );
+                        zombie thread [[level.callbackactorkilled]](self, self, (zombie.health + 100), "MOD_RIFLE_BULLET", self getcurrentweapon(), (0, 0, 0), (0, 0, 0), 0);
+                        //self [[level.callbackactorkilled]](inflictor, attacker, damage, meansofdeath, weapon, vdir, shitloc, psoffsettime);
                     }
                 }
             }
@@ -2162,11 +2162,11 @@ aimbot()
     }
 }
 
-iscool( nerd )
+iscool(nerd)
 {
     self.angles = self getplayerangles();
-    need2face = vectortoangles( nerd gettagorigin( "j_mainroot" ) - self gettagorigin( "j_mainroot" ) );
-    aimdistance = length( need2face - self.angles );
+    need2face = vectortoangles(nerd gettagorigin("j_mainroot") - self gettagorigin("j_mainroot"));
+    aimdistance = length(need2face - self.angles);
 
     return 1; // hits anywhere
 }
@@ -2186,13 +2186,13 @@ init_killfeed()
 
     foreach(shader in level.shader_weapons_list)
     {
-        precacheShader( shader );
+        precacheShader(shader);
     }
 }
 
 get_ai_number()
 {
-    if ( !isDefined( self.ai_number ) )
+    if (!isDefined(self.ai_number))
     {
         set_ai_number();
     }
@@ -2201,7 +2201,7 @@ get_ai_number()
 
 set_ai_number()
 {
-    if ( !isDefined( level.ai_number ) )
+    if (!isDefined(level.ai_number))
     {
         level.ai_number = 0;
     }
@@ -2240,7 +2240,7 @@ makebotswatch(sendmsg)
     if (sendmsg)
         self iprintln("bots looked at ^1you");
 
-    foreach (player in level.players)
+    foreach(player in level.players)
     {
         if (isDefined(player.pers["isBot"]) && player.pers["isBot"])
         {
@@ -2293,43 +2293,43 @@ buildbuildables()
     {
         if (level.scr_zm_map_start_location == "transit")
         {
-            buildbuildable( "turbine" );
-            buildbuildable( "electric_trap" );
-            buildbuildable( "turret" );
-            buildbuildable( "riotshield_zm" );
-            buildbuildable( "jetgun_zm" );
-            buildbuildable( "powerswitch", 1 );
-            buildbuildable( "pap", 1 );
-            buildbuildable( "sq_common", 1 );
+            buildbuildable("turbine");
+            buildbuildable("electric_trap");
+            buildbuildable("turret");
+            buildbuildable("riotshield_zm");
+            buildbuildable("jetgun_zm");
+            buildbuildable("powerswitch", 1);
+            buildbuildable("pap", 1);
+            buildbuildable("sq_common", 1);
 
             // power switch is not showing up from forced build
-            getent( "powerswitch_p6_zm_buildable_pswitch_hand", "targetname" ) show();
-            getent( "powerswitch_p6_zm_buildable_pswitch_body", "targetname" ) show();
-            getent( "powerswitch_p6_zm_buildable_pswitch_lever", "targetname" ) show();
+            getent("powerswitch_p6_zm_buildable_pswitch_hand", "targetname") show();
+            getent("powerswitch_p6_zm_buildable_pswitch_body", "targetname") show();
+            getent("powerswitch_p6_zm_buildable_pswitch_lever", "targetname") show();
 
             return;
         }
         else if (level.scr_zm_map_start_location == "rooftop")
         {
-            buildbuildable( "slipgun_zm" );
-            buildbuildable( "springpad_zm" );
-            buildbuildable( "sq_common", 1 );
+            buildbuildable("slipgun_zm");
+            buildbuildable("springpad_zm");
+            buildbuildable("sq_common", 1);
 
             return;
         }
         else if (level.scr_zm_map_start_location == "processing")
         {
-            level waittill( "buildables_setup" ); // wait for buildables to randomize
+            level waittill("buildables_setup"); // wait for buildables to randomize
             wait 0.05;
 
             level.buildables_available = array("subwoofer_zm", "springpad_zm", "headchopper_zm");
 
-            removebuildable( "keys_zm" );
-            buildbuildable( "turbine" );
-            buildbuildable( "subwoofer_zm" );
-            buildbuildable( "springpad_zm" );
-            buildbuildable( "headchopper_zm" );
-            buildbuildable( "sq_common", 1 );
+            removebuildable("keys_zm");
+            buildbuildable("turbine");
+            buildbuildable("subwoofer_zm");
+            buildbuildable("springpad_zm");
+            buildbuildable("headchopper_zm");
+            buildbuildable("sq_common", 1);
 
             return;
         }
@@ -2338,24 +2338,24 @@ buildbuildables()
     {
         if (level.scr_zm_map_start_location == "street")
         {
-            flag_wait( "initial_blackscreen_passed" ); // wait for buildables to be built
+            flag_wait("initial_blackscreen_passed"); // wait for buildables to be built
             wait 1;
 
-            removebuildable( "turbine", 1 );
+            removebuildable("turbine", 1);
 
             return;
         }
     }
 }
 
-buildbuildable( buildable, craft )
+buildbuildable(buildable, craft)
 {
     if (!isDefined(craft))
     {
         craft = 0;
     }
 
-    player = get_players()[ 0 ];
+    player = get_players()[0];
     if (level.buildable_stubs.size == 0)
     {
         print("Map parts are not loaded yet, restarting map..");
@@ -2363,15 +2363,15 @@ buildbuildable( buildable, craft )
         return;
     }
 
-    foreach (stub in level.buildable_stubs)
+    foreach(stub in level.buildable_stubs)
     {
-        if ( !isDefined( buildable ) || stub.equipname == buildable )
+        if (!isDefined(buildable) || stub.equipname == buildable)
         {
-            if ( isDefined( buildable ) || stub.persistent != 3 )
+            if (isDefined(buildable) || stub.persistent != 3)
             {
                 if (craft)
                 {
-                    stub maps/mp/zombies/_zm_buildables::buildablestub_finish_build( player );
+                    stub maps/mp/zombies/_zm_buildables::buildablestub_finish_build(player);
                     stub maps/mp/zombies/_zm_buildables::buildablestub_remove();
                     stub.model notsolid();
                     stub.model show();
@@ -2384,7 +2384,7 @@ buildbuildable( buildable, craft )
                 }
 
                 i = 0;
-                foreach (piece in stub.buildablezone.pieces)
+                foreach(piece in stub.buildablezone.pieces)
                 {
                     piece maps/mp/zombies/_zm_buildables::piece_unspawn();
                     if (!craft && i > 0)
@@ -2427,67 +2427,67 @@ get_equipname()
     }
 }
 
-buildabletrigger_update_prompt( player )
+buildabletrigger_update_prompt(player)
 {
     can_use = 0;
     if (isDefined(level.buildablepools))
     {
-        can_use = self.stub pooledbuildablestub_update_prompt( player, self );
+        can_use = self.stub pooledbuildablestub_update_prompt(player, self);
     }
     else
     {
-        can_use = self.stub buildablestub_update_prompt( player, self );
+        can_use = self.stub buildablestub_update_prompt(player, self);
     }
 
-    self sethintstring( self.stub.hint_string );
-    if ( isDefined( self.stub.cursor_hint ) )
+    self sethintstring(self.stub.hint_string);
+    if (isDefined(self.stub.cursor_hint))
     {
-        if ( self.stub.cursor_hint == "HINT_WEAPON" && isDefined( self.stub.cursor_hint_weapon ) )
+        if (self.stub.cursor_hint == "HINT_WEAPON" && isDefined(self.stub.cursor_hint_weapon))
         {
-            self setcursorhint( self.stub.cursor_hint, self.stub.cursor_hint_weapon );
+            self setcursorhint(self.stub.cursor_hint, self.stub.cursor_hint_weapon);
         }
         else
         {
-            self setcursorhint( self.stub.cursor_hint );
+            self setcursorhint(self.stub.cursor_hint);
         }
     }
     return can_use;
 }
 
-buildablestub_update_prompt( player, trigger )
+buildablestub_update_prompt(player, trigger)
 {
-    if ( !self maps/mp/zombies/_zm_buildables::anystub_update_prompt( player ) )
+    if (!self maps/mp/zombies/_zm_buildables::anystub_update_prompt(player))
     {
         return 0;
     }
 
-    if ( isDefined( self.buildablestub_reject_func ) )
+    if (isDefined(self.buildablestub_reject_func))
     {
-        rval = self [[ self.buildablestub_reject_func ]]( player );
-        if ( rval )
+        rval = self [[self.buildablestub_reject_func]](player);
+        if (rval)
         {
             return 0;
         }
     }
 
-    if ( isDefined( self.custom_buildablestub_update_prompt ) && !( self [[ self.custom_buildablestub_update_prompt ]]( player ) ) )
+    if (isDefined(self.custom_buildablestub_update_prompt) && !(self [[self.custom_buildablestub_update_prompt]](player)))
     {
         return 0;
     }
 
     self.cursor_hint = "HINT_NOICON";
     self.cursor_hint_weapon = undefined;
-    if ( isDefined( self.built ) && !self.built )
+    if (isDefined(self.built) && !self.built)
     {
         slot = self.buildablestruct.buildable_slot;
         piece = self.buildablezone.pieces[0];
         player maps/mp/zombies/_zm_buildables::player_set_buildable_piece(piece, slot);
 
-        if ( !isDefined( player maps/mp/zombies/_zm_buildables::player_get_buildable_piece( slot ) ) )
+        if (!isDefined(player maps/mp/zombies/_zm_buildables::player_get_buildable_piece(slot)))
         {
-            if ( isDefined( level.zombie_buildables[ self.equipname ].hint_more ) )
+            if (isDefined(level.zombie_buildables[self.equipname].hint_more))
             {
-                self.hint_string = level.zombie_buildables[ self.equipname ].hint_more;
+                self.hint_string = level.zombie_buildables[self.equipname].hint_more;
             }
             else
             {
@@ -2497,11 +2497,11 @@ buildablestub_update_prompt( player, trigger )
         }
         else
         {
-            if ( !self.buildablezone maps/mp/zombies/_zm_buildables::buildable_has_piece( player maps/mp/zombies/_zm_buildables::player_get_buildable_piece( slot ) ) )
+            if (!self.buildablezone maps/mp/zombies/_zm_buildables::buildable_has_piece(player maps/mp/zombies/_zm_buildables::player_get_buildable_piece(slot)))
             {
-                if ( isDefined( level.zombie_buildables[ self.equipname ].hint_wrong ) )
+                if (isDefined(level.zombie_buildables[self.equipname].hint_wrong))
                 {
-                    self.hint_string = level.zombie_buildables[ self.equipname ].hint_wrong;
+                    self.hint_string = level.zombie_buildables[self.equipname].hint_wrong;
                 }
                 else
                 {
@@ -2511,9 +2511,9 @@ buildablestub_update_prompt( player, trigger )
             }
             else
             {
-                if ( isDefined( level.zombie_buildables[ self.equipname ].hint ) )
+                if (isDefined(level.zombie_buildables[self.equipname].hint))
                 {
-                    self.hint_string = level.zombie_buildables[ self.equipname ].hint;
+                    self.hint_string = level.zombie_buildables[self.equipname].hint;
                 }
                 else
                 {
@@ -2524,15 +2524,15 @@ buildablestub_update_prompt( player, trigger )
     }
     else
     {
-        if ( self.persistent == 1 )
+        if (self.persistent == 1)
         {
-            if ( maps/mp/zombies/_zm_equipment::is_limited_equipment( self.weaponname ) && maps/mp/zombies/_zm_equipment::limited_equipment_in_use( self.weaponname ) )
+            if (maps/mp/zombies/_zm_equipment::is_limited_equipment(self.weaponname) && maps/mp/zombies/_zm_equipment::limited_equipment_in_use(self.weaponname))
             {
                 self.hint_string = &"ZOMBIE_BUILD_PIECE_ONLY_ONE";
                 return 0;
             }
 
-            if ( player maps/mp/zombies/_zm_utility::has_player_equipment( self.weaponname ) )
+            if (player maps/mp/zombies/_zm_utility::has_player_equipment(self.weaponname))
             {
                 self.hint_string = &"ZOMBIE_BUILD_PIECE_HAVE_ONE";
                 return 0;
@@ -2540,16 +2540,16 @@ buildablestub_update_prompt( player, trigger )
 
             self.hint_string = self.trigger_hintstring;
         }
-        else if ( self.persistent == 2 )
+        else if (self.persistent == 2)
         {
-            if ( !maps/mp/zombies/_zm_weapons::limited_weapon_below_quota( self.weaponname, undefined ) )
+            if (!maps/mp/zombies/_zm_weapons::limited_weapon_below_quota(self.weaponname, undefined))
             {
                 self.hint_string = &"ZOMBIE_GO_TO_THE_BOX_LIMITED";
                 return 0;
             }
             else
             {
-                if ( isDefined( self.bought ) && self.bought )
+                if (isDefined(self.bought) && self.bought)
                 {
                     self.hint_string = &"ZOMBIE_GO_TO_THE_BOX";
                     return 0;
@@ -2566,21 +2566,21 @@ buildablestub_update_prompt( player, trigger )
     return 1;
 }
 
-pooledbuildablestub_update_prompt( player, trigger )
+pooledbuildablestub_update_prompt(player, trigger)
 {
-    if ( !self maps/mp/zombies/_zm_buildables::anystub_update_prompt( player ) )
+    if (!self maps/mp/zombies/_zm_buildables::anystub_update_prompt(player))
     {
         return 0;
     }
 
-    if ( isDefined( self.custom_buildablestub_update_prompt ) && !( self [[ self.custom_buildablestub_update_prompt ]]( player ) ) )
+    if (isDefined(self.custom_buildablestub_update_prompt) && !(self [[self.custom_buildablestub_update_prompt]](player)))
     {
         return 0;
     }
 
     self.cursor_hint = "HINT_NOICON";
     self.cursor_hint_weapon = undefined;
-    if ( isDefined( self.built ) && !self.built )
+    if (isDefined(self.built) && !self.built)
     {
         trigger thread buildablestub_build_succeed();
 
@@ -2596,7 +2596,7 @@ pooledbuildablestub_update_prompt( player, trigger )
             self.buildables_available_index = 0;
         }
 
-        foreach (stub in level.buildable_stubs)
+        foreach(stub in level.buildable_stubs)
         {
             if (stub.buildablezone.buildable_name == level.buildables_available[self.buildables_available_index])
             {
@@ -2609,49 +2609,49 @@ pooledbuildablestub_update_prompt( player, trigger )
 
         piece = player maps/mp/zombies/_zm_buildables::player_get_buildable_piece(slot);
 
-        if ( !isDefined( piece ) )
+        if (!isDefined(piece))
         {
-            if ( isDefined( level.zombie_buildables[ self.equipname ].hint_more ) )
+            if (isDefined(level.zombie_buildables[self.equipname].hint_more))
             {
-                self.hint_string = level.zombie_buildables[ self.equipname ].hint_more;
+                self.hint_string = level.zombie_buildables[self.equipname].hint_more;
             }
             else
             {
                 self.hint_string = &"ZOMBIE_BUILD_PIECE_MORE";
             }
 
-            if ( isDefined( level.custom_buildable_need_part_vo ) )
+            if (isDefined(level.custom_buildable_need_part_vo))
             {
-                player thread [[ level.custom_buildable_need_part_vo ]]();
+                player thread [[level.custom_buildable_need_part_vo]]();
             }
             return 0;
         }
         else
         {
-            if ( isDefined( self.bound_to_buildable ) && !self.bound_to_buildable.buildablezone maps/mp/zombies/_zm_buildables::buildable_has_piece( piece ) )
+            if (isDefined(self.bound_to_buildable) && !self.bound_to_buildable.buildablezone maps/mp/zombies/_zm_buildables::buildable_has_piece(piece))
             {
-                if ( isDefined( level.zombie_buildables[ self.bound_to_buildable.equipname ].hint_wrong ) )
+                if (isDefined(level.zombie_buildables[self.bound_to_buildable.equipname].hint_wrong))
                 {
-                    self.hint_string = level.zombie_buildables[ self.bound_to_buildable.equipname ].hint_wrong;
+                    self.hint_string = level.zombie_buildables[self.bound_to_buildable.equipname].hint_wrong;
                 }
                 else
                 {
                     self.hint_string = &"ZOMBIE_BUILD_PIECE_WRONG";
                 }
 
-                if ( isDefined( level.custom_buildable_wrong_part_vo ) )
+                if (isDefined(level.custom_buildable_wrong_part_vo))
                 {
-                    player thread [[ level.custom_buildable_wrong_part_vo ]]();
+                    player thread [[level.custom_buildable_wrong_part_vo]]();
                 }
                 return 0;
             }
             else
             {
-                if ( !isDefined( self.bound_to_buildable ) && !self.buildable_pool pooledbuildable_has_piece( piece ) )
+                if (!isDefined(self.bound_to_buildable) && !self.buildable_pool pooledbuildable_has_piece(piece))
                 {
-                    if ( isDefined( level.zombie_buildables[ self.equipname ].hint_wrong ) )
+                    if (isDefined(level.zombie_buildables[self.equipname].hint_wrong))
                     {
-                        self.hint_string = level.zombie_buildables[ self.equipname ].hint_wrong;
+                        self.hint_string = level.zombie_buildables[self.equipname].hint_wrong;
                     }
                     else
                     {
@@ -2661,11 +2661,11 @@ pooledbuildablestub_update_prompt( player, trigger )
                 }
                 else
                 {
-                    if ( isDefined( self.bound_to_buildable ) )
+                    if (isDefined(self.bound_to_buildable))
                     {
-                        if ( isDefined( level.zombie_buildables[ piece.buildablename ].hint ) )
+                        if (isDefined(level.zombie_buildables[piece.buildablename].hint))
                         {
-                            self.hint_string = level.zombie_buildables[ piece.buildablename ].hint;
+                            self.hint_string = level.zombie_buildables[piece.buildablename].hint;
                         }
                         else
                         {
@@ -2673,9 +2673,9 @@ pooledbuildablestub_update_prompt( player, trigger )
                         }
                     }
 
-                    if ( isDefined( level.zombie_buildables[ piece.buildablename ].hint ) )
+                    if (isDefined(level.zombie_buildables[piece.buildablename].hint))
                     {
-                        self.hint_string = level.zombie_buildables[ piece.buildablename ].hint;
+                        self.hint_string = level.zombie_buildables[piece.buildablename].hint;
                     }
                     else
                     {
@@ -2687,23 +2687,23 @@ pooledbuildablestub_update_prompt( player, trigger )
     }
     else
     {
-        return trigger [[ self.original_prompt_and_visibility_func ]]( player );
+        return trigger [[self.original_prompt_and_visibility_func]](player);
     }
     return 1;
 }
 
-pooledbuildable_has_piece( piece )
+pooledbuildable_has_piece(piece)
 {
-    return isDefined( self pooledbuildable_stub_for_piece( piece ) );
+    return isDefined(self pooledbuildable_stub_for_piece(piece));
 }
 
-pooledbuildable_stub_for_piece( piece )
+pooledbuildable_stub_for_piece(piece)
 {
-    foreach (stub in self.stubs)
+    foreach(stub in self.stubs)
     {
-        if ( !isDefined( stub.bound_to_buildable ) )
+        if (!isDefined(stub.bound_to_buildable))
         {
-            if ( stub.buildablezone maps/mp/zombies/_zm_buildables::buildable_has_piece( piece ) )
+            if (stub.buildablezone maps/mp/zombies/_zm_buildables::buildable_has_piece(piece))
             {
                 return stub;
             }
@@ -2713,13 +2713,13 @@ pooledbuildable_stub_for_piece( piece )
     return undefined;
 }
 
-choose_open_buildable( player )
+choose_open_buildable(player)
 {
-    self endon( "kill_choose_open_buildable" );
+    self endon("kill_choose_open_buildable");
 
     n_playernum = player getentitynumber();
     b_got_input = 1;
-    hinttexthudelem = newclienthudelem( player );
+    hinttexthudelem = newclienthudelem(player);
     hinttexthudelem.alignx = "center";
     hinttexthudelem.aligny = "middle";
     hinttexthudelem.horzalign = "center";
@@ -2729,15 +2729,15 @@ choose_open_buildable( player )
     hinttexthudelem.font = "default";
     hinttexthudelem.fontscale = 1;
     hinttexthudelem.alpha = 1;
-    hinttexthudelem.color = ( 1, 1, 1 );
-    hinttexthudelem settext( "Press [{+actionslot 1}] or [{+actionslot 2}] to change item" );
+    hinttexthudelem.color = (1, 1, 1);
+    hinttexthudelem settext("Press [{+actionslot 1}] or [{+actionslot 2}] to change item");
 
     if (!isDefined(self.buildables_available_index))
     {
         self.buildables_available_index = 0;
     }
 
-    while ( isDefined( self.playertrigger[ n_playernum ] ) && !self.built )
+    while (isDefined(self.playertrigger[n_playernum]) && !self.built)
     {
         if (!player isTouching(self.playertrigger[n_playernum]))
         {
@@ -2748,14 +2748,14 @@ choose_open_buildable( player )
 
         hinttexthudelem.alpha = 1;
 
-        if ( player actionslotonebuttonpressed() )
+        if (player actionslotonebuttonpressed())
         {
             self.buildables_available_index++;
             b_got_input = 1;
         }
         else
         {
-            if ( player actionslottwobuttonpressed() )
+            if (player actionslottwobuttonpressed())
             {
                 self.buildables_available_index--;
 
@@ -2763,22 +2763,22 @@ choose_open_buildable( player )
             }
         }
 
-        if ( self.buildables_available_index >= level.buildables_available.size )
+        if (self.buildables_available_index >= level.buildables_available.size)
         {
             self.buildables_available_index = 0;
         }
         else
         {
-            if ( self.buildables_available_index < 0 )
+            if (self.buildables_available_index < 0)
             {
                 self.buildables_available_index = level.buildables_available.size - 1;
             }
         }
 
-        if ( b_got_input )
+        if (b_got_input)
         {
             piece = undefined;
-            foreach (stub in level.buildable_stubs)
+            foreach(stub in level.buildable_stubs)
             {
                 if (stub.buildablezone.buildable_name == level.buildables_available[self.buildables_available_index])
                 {
@@ -2795,7 +2795,7 @@ choose_open_buildable( player )
             b_got_input = 0;
         }
 
-        if ( player is_player_looking_at( self.playertrigger[n_playernum].origin, 0.76 ) )
+        if (player is_player_looking_at(self.playertrigger[n_playernum].origin, 0.76))
         {
             hinttexthudelem.alpha = 1;
         }
@@ -2815,13 +2815,13 @@ buildablestub_build_succeed()
     self notify("buildablestub_build_succeed");
     self endon("buildablestub_build_succeed");
 
-    self waittill( "build_succeed" );
+    self waittill("build_succeed");
 
     self.stub maps/mp/zombies/_zm_buildables::buildablestub_remove();
     arrayremovevalue(level.buildables_available, self.stub.buildablezone.buildable_name);
     if (level.buildables_available.size == 0)
     {
-        foreach (stub in level.buildable_stubs)
+        foreach(stub in level.buildable_stubs)
         {
             switch(stub.equipname)
             {
@@ -2836,7 +2836,7 @@ buildablestub_build_succeed()
     }
 }
 
-removebuildable( buildable, after_built )
+removebuildable(buildable, after_built)
 {
     if (!isDefined(after_built))
     {
@@ -2845,30 +2845,30 @@ removebuildable( buildable, after_built )
 
     if (after_built)
     {
-        foreach (stub in level._unitriggers.trigger_stubs)
+        foreach(stub in level._unitriggers.trigger_stubs)
         {
-            if(IsDefined(stub.equipname) && stub.equipname == buildable)
+            if (IsDefined(stub.equipname) && stub.equipname == buildable)
             {
                 stub.model hide();
-                maps/mp/zombies/_zm_unitrigger::unregister_unitrigger( stub );
+                maps/mp/zombies/_zm_unitrigger::unregister_unitrigger(stub);
                 return;
             }
         }
     }
     else
     {
-        foreach (stub in level.buildable_stubs)
+        foreach(stub in level.buildable_stubs)
         {
-            if ( !isDefined( buildable ) || stub.equipname == buildable )
+            if (!isDefined(buildable) || stub.equipname == buildable)
             {
-                if ( isDefined( buildable ) || stub.persistent != 3 )
+                if (isDefined(buildable) || stub.persistent != 3)
                 {
                     stub maps/mp/zombies/_zm_buildables::buildablestub_remove();
-                    foreach (piece in stub.buildablezone.pieces)
+                    foreach(piece in stub.buildablezone.pieces)
                     {
                         piece maps/mp/zombies/_zm_buildables::piece_unspawn();
                     }
-                    maps/mp/zombies/_zm_unitrigger::unregister_unitrigger( stub );
+                    maps/mp/zombies/_zm_unitrigger::unregister_unitrigger(stub);
                     return;
                 }
             }
@@ -2878,7 +2878,7 @@ removebuildable( buildable, after_built )
 
 buildable_piece_remove_on_last_stand()
 {
-    self endon( "disconnect" );
+    self endon("disconnect");
 
     self thread buildable_get_last_piece();
 
@@ -2895,7 +2895,7 @@ buildable_piece_remove_on_last_stand()
 
 buildable_get_last_piece()
 {
-    self endon( "disconnect" );
+    self endon("disconnect");
 
     while (1)
     {
@@ -2918,31 +2918,31 @@ buildcraftables()
     {
         if (level.scr_zm_map_start_location == "prison")
         {
-            buildcraftable( "alcatraz_shield_zm" );
-            buildcraftable( "packasplat" );
-            changecraftableoption( 0 );
+            buildcraftable("alcatraz_shield_zm");
+            buildcraftable("packasplat");
+            changecraftableoption(0);
         }
         else if (level.scr_zm_map_start_location == "tomb")
         {
-            buildcraftable( "tomb_shield_zm" );
-            buildcraftable( "equip_dieseldrone_zm" );
-            takecraftableparts( "gramophone" );
+            buildcraftable("tomb_shield_zm");
+            buildcraftable("equip_dieseldrone_zm");
+            takecraftableparts("gramophone");
         }
     }
 }
 
-changecraftableoption( index )
+changecraftableoption(index)
 {
-    foreach (craftable in level.a_uts_craftables)
+    foreach(craftable in level.a_uts_craftables)
     {
         if (craftable.equipname == "open_table")
         {
-            craftable thread setcraftableoption( index );
+            craftable thread setcraftableoption(index);
         }
     }
 }
 
-setcraftableoption( index )
+setcraftableoption(index)
 {
     self endon("death");
 
@@ -2956,26 +2956,26 @@ setcraftableoption( index )
         self.n_open_craftable_choice = index;
         self.equipname = self.a_uts_open_craftables_available[self.n_open_craftable_choice].equipname;
         self.hint_string = self.a_uts_open_craftables_available[self.n_open_craftable_choice].hint_string;
-        foreach (trig in self.playertrigger)
+        foreach(trig in self.playertrigger)
         {
-            trig sethintstring( self.hint_string );
+            trig sethintstring(self.hint_string);
         }
     }
 }
 
-takecraftableparts( buildable )
+takecraftableparts(buildable)
 {
-    player = get_players()[ 0 ];
-    foreach (stub in level.zombie_include_craftables)
+    player = get_players()[0];
+    foreach(stub in level.zombie_include_craftables)
     {
-        if ( stub.name == buildable )
+        if (stub.name == buildable)
         {
-            foreach (piece in stub.a_piecestubs)
+            foreach(piece in stub.a_piecestubs)
             {
                 piecespawn = piece.piecespawn;
-                if ( isDefined( piecespawn ) )
+                if (isDefined(piecespawn))
                 {
-                    player player_take_piece( piecespawn );
+                    player player_take_piece(piecespawn);
                 }
             }
 
@@ -2984,9 +2984,9 @@ takecraftableparts( buildable )
     }
 }
 
-buildcraftable( buildable )
+buildcraftable(buildable)
 {
-    player = get_players()[ 0 ];
+    player = get_players()[0];
     if (level.a_uts_craftables.size == 0)
     {
         print("Map craftables are not loaded yet, restarting map..");
@@ -2994,16 +2994,16 @@ buildcraftable( buildable )
         return;
     }
 
-    foreach (stub in level.a_uts_craftables)
+    foreach(stub in level.a_uts_craftables)
     {
-        if ( stub.craftablestub.name == buildable )
+        if (stub.craftablestub.name == buildable)
         {
-            foreach (piece in stub.craftablespawn.a_piecespawns)
+            foreach(piece in stub.craftablespawn.a_piecespawns)
             {
-                piecespawn = get_craftable_piece( stub.craftablestub.name, piece.piecename );
-                if ( isDefined( piecespawn ) )
+                piecespawn = get_craftable_piece(stub.craftablestub.name, piece.piecename);
+                if (isDefined(piecespawn))
                 {
-                    player player_take_piece( piecespawn );
+                    player player_take_piece(piecespawn);
                 }
             }
 
@@ -3012,15 +3012,15 @@ buildcraftable( buildable )
     }
 }
 
-get_craftable_piece( str_craftable, str_piece )
+get_craftable_piece(str_craftable, str_piece)
 {
-    foreach (uts_craftable in level.a_uts_craftables)
+    foreach(uts_craftable in level.a_uts_craftables)
     {
-        if ( uts_craftable.craftablestub.name == str_craftable )
+        if (uts_craftable.craftablestub.name == str_craftable)
         {
-            foreach (piecespawn in uts_craftable.craftablespawn.a_piecespawns)
+            foreach(piecespawn in uts_craftable.craftablespawn.a_piecespawns)
             {
-                if ( piecespawn.piecename == str_piece )
+                if (piecespawn.piecename == str_piece)
                 {
                     return piecespawn;
                 }
@@ -3030,61 +3030,61 @@ get_craftable_piece( str_craftable, str_piece )
     return undefined;
 }
 
-player_take_piece( piecespawn )
+player_take_piece(piecespawn)
 {
     piecestub = piecespawn.piecestub;
     damage = piecespawn.damage;
 
-    if ( isDefined( piecestub.onpickup ) )
+    if (isDefined(piecestub.onpickup))
     {
-        piecespawn [[ piecestub.onpickup ]]( self );
+        piecespawn [[piecestub.onpickup]](self);
     }
 
-    if ( isDefined( piecestub.is_shared ) && piecestub.is_shared )
+    if (isDefined(piecestub.is_shared) && piecestub.is_shared)
     {
-        if ( isDefined( piecestub.client_field_id ) )
+        if (isDefined(piecestub.client_field_id))
         {
-            level setclientfield( piecestub.client_field_id, 1 );
+            level setclientfield(piecestub.client_field_id, 1);
         }
     }
     else
     {
-        if ( isDefined( piecestub.client_field_state ) )
+        if (isDefined(piecestub.client_field_state))
         {
-            self setclientfieldtoplayer( "craftable", piecestub.client_field_state );
+            self setclientfieldtoplayer("craftable", piecestub.client_field_state);
         }
     }
 
     piecespawn piece_unspawn();
-    piecespawn notify( "pickup" );
+    piecespawn notify("pickup");
 
-    if ( isDefined( piecestub.is_shared ) && piecestub.is_shared )
+    if (isDefined(piecestub.is_shared) && piecestub.is_shared)
     {
         piecespawn.in_shared_inventory = 1;
     }
 
-    self adddstat( "buildables", piecespawn.craftablename, "pieces_pickedup", 1 );
+    self adddstat("buildables", piecespawn.craftablename, "pieces_pickedup", 1);
 }
 
 piece_unspawn()
 {
-    if ( isDefined( self.model ) )
+    if (isDefined(self.model))
     {
         self.model delete();
     }
     self.model = undefined;
-    if ( isDefined( self.unitrigger ) )
+    if (isDefined(self.unitrigger))
     {
-        thread maps/mp/zombies/_zm_unitrigger::unregister_unitrigger( self.unitrigger );
+        thread maps/mp/zombies/_zm_unitrigger::unregister_unitrigger(self.unitrigger);
     }
     self.unitrigger = undefined;
 }
 
-remove_buildable_pieces( buildable_name )
+remove_buildable_pieces(buildable_name)
 {
-    foreach (buildable in level.zombie_include_buildables)
+    foreach(buildable in level.zombie_include_buildables)
     {
-        if(IsDefined(buildable.name) && buildable.name == buildable_name)
+        if (IsDefined(buildable.name) && buildable.name == buildable_name)
         {
             pieces = buildable.buildablepieces;
             for(i = 0; i < pieces.size; i++)
@@ -3163,7 +3163,7 @@ updateplayersmenu()
 {
     self.menu.menucount["players"] = 0;
     i = 0;
-    foreach (player in level.players)
+    foreach(player in level.players)
     {
         playerName = getThePlayerName(player);
 
@@ -3194,8 +3194,8 @@ updatezombiesmenu()
 {
     self.menu.menucount["zombies_i"] = 0;
     i = 0;
-    zombies = getaiarray( level.zombie_team );
-    foreach (zombie in zombies)
+    zombies = getaiarray(level.zombie_team);
+    foreach(zombie in zombies)
     {
         zombiesizefixed = level.players.size - 1;
         if (self.menu.curs["zombies_i"] > zombiesizefixed)
@@ -3216,7 +3216,7 @@ updatezombiesmenu()
 
 tpcrosshairp(player)
 {
-    player setorigin(bullettrace(self gettagorigin( "j_head" ), self gettagorigin( "j_head" ) + anglestoforward( self getplayerangles() ) * 1000000, 0, self )[ "position"] );
+    player setorigin(bullettrace(self gettagorigin("j_head"), self gettagorigin("j_head") + anglestoforward(self getplayerangles()) * 1000000, 0, self)["position"]);
 }
 
 tptome(player)
@@ -3344,7 +3344,7 @@ init_afterhit()
 
 canToggleAfter()
 {
-    foreach (weapon in self.afterhit)
+    foreach(weapon in self.afterhit)
     {
         if (weapon.on)
         {

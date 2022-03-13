@@ -44,7 +44,7 @@ init()
     // variables
     level.perk_purchase_limit = 20;
     level.zombie_vars["zombie_use_failsafe"] = false;
-    set_zombie_var( "zombie_use_failsafe", 0 );
+    set_zombie_var("zombie_use_failsafe", 0);
     level.player_out_of_playable_area_monitor = false;
     level.player_too_many_weapons_monitor = false;
 
@@ -90,13 +90,13 @@ set_pap_price()
     precachestring(&"ZOMBIE_PERK_PACKAPUNCH");
     precachestring(&"ZOMBIE_PERK_PACKAPUNCH_ATT");
 
-    level waittill( "Pack_A_Punch_on" );
+    level waittill("Pack_A_Punch_on");
 
-    pap_triggers = getentarray( "specialty_weapupgrade", "script_noteworthy" );
+    pap_triggers = getentarray("specialty_weapupgrade", "script_noteworthy");
     pap_trigger = pap_triggers[0];
     pap_trigger.cost = 0;
     pap_trigger.attachment_cost = 0;
-    pap_trigger sethintstring( &"ZOMBIE_PERK_PACKAPUNCH", pap_trigger.cost ); // reset hint msg to new price
+    pap_trigger sethintstring(&"ZOMBIE_PERK_PACKAPUNCH", pap_trigger.cost); // reset hint msg to new price
 }
 
 onPlayerConnect()
