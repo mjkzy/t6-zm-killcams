@@ -1,3 +1,5 @@
+#include common_scripts/utility;
+
 main()
 {
     replacefunc(maps/mp/zombies/_zm_utility::has_player_equipment, ::has_player_equipment_hook);
