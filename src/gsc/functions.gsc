@@ -968,7 +968,7 @@ CreateMenu()
             self add_option("weapar", "m27", ::g_weapon, "hk416_zm");
         self add_option("weapar", "m16", ::g_weapon, "m16_zm");
     }
-    if (level.script != "zm_buried" && level.script != "zm_prison" && leve.script != "zm_tomb")
+    if (level.script != "zm_buried" && level.script != "zm_prison" && level.script != "zm_tomb")
     {
         self add_option("weapar", "m8a1", ::g_weapon, "xm8_zm");
         self add_option("weapar_gl", "m8a1 gl", ::g_weapon, "gl_xm8_zm");
