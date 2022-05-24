@@ -9,5 +9,4 @@ you can download the latest version here:</br>
 cmtfrosty - menu base  
 cabcon - bits of code here and there but not major  
 birchy - killcam help & killcam overlay  
-chase - github actions & auto compile  
-ness - console port (maintained here: <https://github.com/aby/t6-zm-killcams>)
+chase - github actions & auto compile
