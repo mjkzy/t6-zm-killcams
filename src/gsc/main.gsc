@@ -6,34 +6,34 @@
 
 */
 
-#include maps/mp/_utility;
-#include common_scripts/utility;
-#include maps/mp/gametypes_zm/_hud_util;
-#include maps/mp/gametypes_zm/_hud_message;
-#include maps/mp/zombies/_zm;
-#include maps/mp/zombies/_zm_audio;
-#include maps/mp/zombies/_zm_score;
-#include maps/mp/zombies/_zm_spawner;
-#include maps/mp/gametypes_zm/_globallogic_spawn;
-#include maps/mp/gametypes_zm/_spectating;
-#include maps/mp/_challenges;
-#include maps/mp/gametypes_zm/_globallogic;
-#include maps/mp/gametypes_zm/_globallogic_audio;
-#include maps/mp/gametypes_zm/_spawnlogic;
-#include maps/mp/gametypes_zm/_rank;
-#include maps/mp/gametypes_zm/_weapons;
-#include maps/mp/gametypes_zm/_spawning;
-#include maps/mp/gametypes_zm/_globallogic_utils;
-#include maps/mp/gametypes_zm/_globallogic_player;
-#include maps/mp/gametypes_zm/_globallogic_ui;
-#include maps/mp/gametypes_zm/_globallogic_score;
-#include maps/mp/gametypes_zm/_persistence;
-#include maps/mp/zombies/_zm_weapons;
-#include maps/mp/zombies/_zm_utility;
+#include maps\mp\_utility;
+#include common_scripts\utility;
+#include maps\mp\gametypes_zm\_hud_util;
+#include maps\mp\gametypes_zm\_hud_message;
+#include maps\mp\zombies\_zm;
+#include maps\mp\zombies\_zm_audio;
+#include maps\mp\zombies\_zm_score;
+#include maps\mp\zombies\_zm_spawner;
+#include maps\mp\gametypes_zm\_globallogic_spawn;
+#include maps\mp\gametypes_zm\_spectating;
+#include maps\mp\_challenges;
+#include maps\mp\gametypes_zm\_globallogic;
+#include maps\mp\gametypes_zm\_globallogic_audio;
+#include maps\mp\gametypes_zm\_spawnlogic;
+#include maps\mp\gametypes_zm\_rank;
+#include maps\mp\gametypes_zm\_weapons;
+#include maps\mp\gametypes_zm\_spawning;
+#include maps\mp\gametypes_zm\_globallogic_utils;
+#include maps\mp\gametypes_zm\_globallogic_player;
+#include maps\mp\gametypes_zm\_globallogic_ui;
+#include maps\mp\gametypes_zm\_globallogic_score;
+#include maps\mp\gametypes_zm\_persistence;
+#include maps\mp\zombies\_zm_weapons;
+#include maps\mp\zombies\_zm_utility;
 
 main()
 {
-    replacefunc(maps/mp/zombies/_zm_laststand::is_reviving, ::is_reviving_hook);
+    replacefunc(maps\mp\zombies\_zm_laststand::is_reviving, ::is_reviving_hook);
 }
 
 init()
@@ -61,8 +61,8 @@ init()
     level.round_based = false;                // victory by default
     level.infinalkillcam = 0;
 
-    maps/mp/zombies/_zm_spawner::register_zombie_damage_callback(::do_hitmarker);
-    maps/mp/zombies/_zm_spawner::register_zombie_death_event_callback(::do_hitmarker_death);
+    maps\mp\zombies\_zm_spawner::register_zombie_damage_callback(::do_hitmarker);
+    maps\mp\zombies\_zm_spawner::register_zombie_death_event_callback(::do_hitmarker_death);
 
     level thread init_killfeed();
     level thread onplayerconnect();

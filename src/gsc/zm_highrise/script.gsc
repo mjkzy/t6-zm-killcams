@@ -1,12 +1,12 @@
-#include common_scripts/utility;
+#include common_scripts\utility;
 
 main()
 {
-    replacefunc(maps/mp/zombies/_zm_utility::has_player_equipment, ::has_player_equipment_hook);
+    replacefunc(maps\mp\zombies\_zm_utility::has_player_equipment, ::has_player_equipment_hook);
 
     // trample steam
-    replacefunc(maps/mp/zombies/_zm_equip_springpad::pickupspringpad, ::pickupspringpad_hook);
-    replacefunc(maps/mp/zombies/_zm_equip_springpad::watchspringpaduse, ::watchspringpaduse_hook);
+    replacefunc(maps\mp\zombies\_zm_equip_springpad::pickupspringpad, ::pickupspringpad_hook);
+    replacefunc(maps\mp\zombies\_zm_equip_springpad::watchspringpaduse, ::watchspringpaduse_hook);
 }
 
 has_player_equipment_hook(weaponname)
@@ -28,10 +28,10 @@ watchspringpaduse_hook()
             if (is_true(self.springpad_picked_up))
             {
                 self.springpad_picked_up = false;
-                self maps/mp/zombies/_zm_equip_springpad::cleanupoldspringpad();
+                self maps\mp\zombies\_zm_equip_springpad::cleanupoldspringpad();
             }
 			self.buildablespringpad = weapon;
-			self thread maps/mp/zombies/_zm_equip_springpad::startspringpaddeploy(weapon);
+			self thread maps\mp\zombies\_zm_equip_springpad::startspringpaddeploy(weapon);
 		}
 	}
 }

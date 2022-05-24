@@ -666,11 +666,11 @@ verificationToColor(status)
 
 changeVerificationMenu(player, verlevel)
 {
-    if (player getVerificationDvar() != verlevel && !player isHost())
+    if (player.status != verlevel && !player isHost())
     {
-        player setVerificationDvar() = verlevel;
+        player.status = verlevel;
 
-        if (player getVerificationDvar() == "Unverified")
+        if (player.status == "Unverified")
             player thread destroyMenu(player);
 
         self iprintln("set level for " + getThePlayerName(player) + " to " + verificationToColor(verlevel));
@@ -679,15 +679,10 @@ changeVerificationMenu(player, verlevel)
     else
     {
         if (player isHost())
-            self iprintln("cannot change level to " + verificationToColor(player getVerificationDvar()));
+            self iprintln("cannot change level to " + verificationToColor(player.status));
         else
             self iprintln("level for " + getThePlayerName(player) + " is already " + verificationToColor(verlevel));
     }
-}
-
-changeVerification(player, verlevel)
-{
-    verlevel = player getVerificationDvar();
 }
 
 // cuts clan tag
@@ -1341,13 +1336,13 @@ switchteams(player)
 g_weapon(weapon)
 {
     // just found this weapon wrapper lol
-    self maps/mp/zombies/_zm_weapons::weapon_give(weapon);
+    self maps\mp\zombies\_zm_weapons::weapon_give(weapon);
     self givemaxammo(weapon);
 }
 
 doperks(perk)
 {
-    self maps/mp/zombies/_zm_perks::give_perk(perk);
+    self maps\mp\zombies\_zm_perks::give_perk(perk);
 }
 
 freezezm()
@@ -1405,7 +1400,7 @@ spawnbot()
     bot.pers["isBot"] = true;
     bot.equipment_enabled = false;
     yaw = spawnpoint.angles[1];
-    bot thread maps/mp/zombies/_zm::zbot_spawn_think(spawnpoint.origin, yaw);
+    bot thread maps\mp\zombies\_zm::zbot_spawn_think(spawnpoint.origin, yaw);
 
     team = level.players[0].team;
     bot.switching_teams = 1;
@@ -2030,43 +2025,9 @@ clear(player)
 
 verifyonconnect()
 {
+    self.status = "Co-Host";
     if (self ishost())
-        self setverificationdvar("Host");
-    else
-        self setverificationdvar("Co-Host");
-}
-
-setVerificationDvar(verif_level)
-{
-    dvar = self getXUID() + "_verification";
-    setDvar(dvar, verif_level);
-}
-
-setDvar4Player(player, levelver)
-{
-    player thread setVerificationDvar(levelver);
-    wait .3;
-    player iprintln("you are now " + levelver + "!");
-}
-
-getVerificationDvar()
-{
-    dvar = self getXUID() + "_verification";
-    return getDvar(dvar);
-}
-
-getStatusDvar(person)
-{
-    dvar = person getXUID() + "_verification";
-    return getDvar(dvar);
-}
-
-verificationDvarUndefined()
-{
-    dvar = self getXUID() + "_verification";
-    result = getDvar(dvar);
-
-    return result == undefined || result == "";
+        self.status = "Host";
 }
 
 monitorLastCooldown()
@@ -2387,8 +2348,8 @@ buildbuildable(buildable, craft)
             {
                 if (craft)
                 {
-                    stub maps/mp/zombies/_zm_buildables::buildablestub_finish_build(player);
-                    stub maps/mp/zombies/_zm_buildables::buildablestub_remove();
+                    stub maps\mp\zombies\_zm_buildables::buildablestub_finish_build(player);
+                    stub maps\mp\zombies\_zm_buildables::buildablestub_remove();
                     stub.model notsolid();
                     stub.model show();
                 }
@@ -2402,10 +2363,10 @@ buildbuildable(buildable, craft)
                 i = 0;
                 foreach(piece in stub.buildablezone.pieces)
                 {
-                    piece maps/mp/zombies/_zm_buildables::piece_unspawn();
+                    piece maps\mp\zombies\_zm_buildables::piece_unspawn();
                     if (!craft && i > 0)
                     {
-                        stub.buildablezone maps/mp/zombies/_zm_buildables::buildable_set_piece_built(piece);
+                        stub.buildablezone maps\mp\zombies\_zm_buildables::buildable_set_piece_built(piece);
                     }
                     i++;
                 }
@@ -2472,7 +2433,7 @@ buildabletrigger_update_prompt(player)
 
 buildablestub_update_prompt(player, trigger)
 {
-    if (!self maps/mp/zombies/_zm_buildables::anystub_update_prompt(player))
+    if (!self maps\mp\zombies\_zm_buildables::anystub_update_prompt(player))
     {
         return 0;
     }
@@ -2497,9 +2458,9 @@ buildablestub_update_prompt(player, trigger)
     {
         slot = self.buildablestruct.buildable_slot;
         piece = self.buildablezone.pieces[0];
-        player maps/mp/zombies/_zm_buildables::player_set_buildable_piece(piece, slot);
+        player maps\mp\zombies\_zm_buildables::player_set_buildable_piece(piece, slot);
 
-        if (!isdefined(player maps/mp/zombies/_zm_buildables::player_get_buildable_piece(slot)))
+        if (!isdefined(player maps\mp\zombies\_zm_buildables::player_get_buildable_piece(slot)))
         {
             if (isdefined(level.zombie_buildables[self.equipname].hint_more))
             {
@@ -2513,7 +2474,7 @@ buildablestub_update_prompt(player, trigger)
         }
         else
         {
-            if (!self.buildablezone maps/mp/zombies/_zm_buildables::buildable_has_piece(player maps/mp/zombies/_zm_buildables::player_get_buildable_piece(slot)))
+            if (!self.buildablezone maps\mp\zombies\_zm_buildables::buildable_has_piece(player maps\mp\zombies\_zm_buildables::player_get_buildable_piece(slot)))
             {
                 if (isdefined(level.zombie_buildables[self.equipname].hint_wrong))
                 {
@@ -2542,13 +2503,13 @@ buildablestub_update_prompt(player, trigger)
     {
         if (self.persistent == 1)
         {
-            if (maps/mp/zombies/_zm_equipment::is_limited_equipment(self.weaponname) && maps/mp/zombies/_zm_equipment::limited_equipment_in_use(self.weaponname))
+            if (maps\mp\zombies\_zm_equipment::is_limited_equipment(self.weaponname) && maps\mp\zombies\_zm_equipment::limited_equipment_in_use(self.weaponname))
             {
                 self.hint_string = &"ZOMBIE_BUILD_PIECE_ONLY_ONE";
                 return 0;
             }
 
-            if (player maps/mp/zombies/_zm_utility::has_player_equipment(self.weaponname))
+            if (player maps\mp\zombies\_zm_utility::has_player_equipment(self.weaponname))
             {
                 self.hint_string = &"ZOMBIE_BUILD_PIECE_HAVE_ONE";
                 return 0;
@@ -2558,7 +2519,7 @@ buildablestub_update_prompt(player, trigger)
         }
         else if (self.persistent == 2)
         {
-            if (!maps/mp/zombies/_zm_weapons::limited_weapon_below_quota(self.weaponname, undefined))
+            if (!maps\mp\zombies\_zm_weapons::limited_weapon_below_quota(self.weaponname, undefined))
             {
                 self.hint_string = &"ZOMBIE_GO_TO_THE_BOX_LIMITED";
                 return 0;
@@ -2584,7 +2545,7 @@ buildablestub_update_prompt(player, trigger)
 
 pooledbuildablestub_update_prompt(player, trigger)
 {
-    if (!self maps/mp/zombies/_zm_buildables::anystub_update_prompt(player))
+    if (!self maps\mp\zombies\_zm_buildables::anystub_update_prompt(player))
     {
         return 0;
     }
@@ -2621,9 +2582,9 @@ pooledbuildablestub_update_prompt(player, trigger)
             }
         }
 
-        player maps/mp/zombies/_zm_buildables::player_set_buildable_piece(piece, slot);
+        player maps\mp\zombies\_zm_buildables::player_set_buildable_piece(piece, slot);
 
-        piece = player maps/mp/zombies/_zm_buildables::player_get_buildable_piece(slot);
+        piece = player maps\mp\zombies\_zm_buildables::player_get_buildable_piece(slot);
 
         if (!isdefined(piece))
         {
@@ -2644,7 +2605,7 @@ pooledbuildablestub_update_prompt(player, trigger)
         }
         else
         {
-            if (isdefined(self.bound_to_buildable) && !self.bound_to_buildable.buildablezone maps/mp/zombies/_zm_buildables::buildable_has_piece(piece))
+            if (isdefined(self.bound_to_buildable) && !self.bound_to_buildable.buildablezone maps\mp\zombies\_zm_buildables::buildable_has_piece(piece))
             {
                 if (isdefined(level.zombie_buildables[self.bound_to_buildable.equipname].hint_wrong))
                 {
@@ -2719,7 +2680,7 @@ pooledbuildable_stub_for_piece(piece)
     {
         if (!isdefined(stub.bound_to_buildable))
         {
-            if (stub.buildablezone maps/mp/zombies/_zm_buildables::buildable_has_piece(piece))
+            if (stub.buildablezone maps\mp\zombies\_zm_buildables::buildable_has_piece(piece))
             {
                 return stub;
             }
@@ -2803,7 +2764,7 @@ choose_open_buildable(player)
                 }
             }
             slot = self.buildablestruct.buildable_slot;
-            player maps/mp/zombies/_zm_buildables::player_set_buildable_piece(piece, slot);
+            player maps\mp\zombies\_zm_buildables::player_set_buildable_piece(piece, slot);
 
             self.equipname = level.buildables_available[self.buildables_available_index];
             self.hint_string = level.zombie_buildables[self.equipname].hint;
@@ -2833,7 +2794,7 @@ buildablestub_build_succeed()
 
     self waittill("build_succeed");
 
-    self.stub maps/mp/zombies/_zm_buildables::buildablestub_remove();
+    self.stub maps\mp\zombies\_zm_buildables::buildablestub_remove();
     arrayremovevalue(level.buildables_available, self.stub.buildablezone.buildable_name);
     if (level.buildables_available.size == 0)
     {
@@ -2845,7 +2806,7 @@ buildablestub_build_succeed()
             case "subwoofer_zm":
             case "springpad_zm":
             case "headchopper_zm":
-                maps/mp/zombies/_zm_unitrigger::unregister_unitrigger(stub);
+                maps\mp\zombies\_zm_unitrigger::unregister_unitrigger(stub);
                 break;
             }
         }
@@ -2866,7 +2827,7 @@ removebuildable(buildable, after_built)
             if (isdefined(stub.equipname) && stub.equipname == buildable)
             {
                 stub.model hide();
-                maps/mp/zombies/_zm_unitrigger::unregister_unitrigger(stub);
+                maps\mp\zombies\_zm_unitrigger::unregister_unitrigger(stub);
                 return;
             }
         }
@@ -2879,12 +2840,12 @@ removebuildable(buildable, after_built)
             {
                 if (isdefined(buildable) || stub.persistent != 3)
                 {
-                    stub maps/mp/zombies/_zm_buildables::buildablestub_remove();
+                    stub maps\mp\zombies\_zm_buildables::buildablestub_remove();
                     foreach(piece in stub.buildablezone.pieces)
                     {
-                        piece maps/mp/zombies/_zm_buildables::piece_unspawn();
+                        piece maps\mp\zombies\_zm_buildables::piece_unspawn();
                     }
-                    maps/mp/zombies/_zm_unitrigger::unregister_unitrigger(stub);
+                    maps\mp\zombies\_zm_unitrigger::unregister_unitrigger(stub);
                     return;
                 }
             }
@@ -2904,7 +2865,7 @@ buildable_piece_remove_on_last_stand()
 
         if (isdefined(self.last_piece))
         {
-            self.last_piece maps/mp/zombies/_zm_buildables::piece_unspawn();
+            self.last_piece maps\mp\zombies\_zm_buildables::piece_unspawn();
         }
     }
 }
@@ -2915,9 +2876,9 @@ buildable_get_last_piece()
 
     while (1)
     {
-        if (!self maps/mp/zombies/_zm_laststand::player_is_in_laststand())
+        if (!self maps\mp\zombies\_zm_laststand::player_is_in_laststand())
         {
-            self.last_piece = maps/mp/zombies/_zm_buildables::player_get_buildable_piece(0);
+            self.last_piece = maps\mp\zombies\_zm_buildables::player_get_buildable_piece(0);
         }
 
         wait 0.05;
@@ -3091,7 +3052,7 @@ piece_unspawn()
     self.model = undefined;
     if (isdefined(self.unitrigger))
     {
-        thread maps/mp/zombies/_zm_unitrigger::unregister_unitrigger(self.unitrigger);
+        thread maps\mp\zombies\_zm_unitrigger::unregister_unitrigger(self.unitrigger);
     }
     self.unitrigger = undefined;
 }
@@ -3105,7 +3066,7 @@ remove_buildable_pieces(buildable_name)
             pieces = buildable.buildablepieces;
             for(i = 0; i < pieces.size; i++)
             {
-                pieces[i] maps/mp/zombies/_zm_buildables::piece_unspawn();
+                pieces[i] maps\mp\zombies\_zm_buildables::piece_unspawn();
             }
             return;
         }
@@ -3271,13 +3232,14 @@ g_staff(weapon, name)
 // revive stalls
 is_reviving_hook(revivee)
 {
-    if (self usebuttonpressed() && maps/mp/zombies/_zm_laststand::can_revive(revivee))
+    if (self usebuttonpressed() && maps\mp\zombies\_zm_laststand::can_revive(revivee))
     {
         self.the_revivee = revivee;
-        return 1;
+        return true;
     }
+
     self.the_revivee = undefined;
-    return 0;
+    return false;
 }
 
 monitor_reviving()
@@ -3288,7 +3250,7 @@ monitor_reviving()
     revive_stall = false;
     for(;;)
     {
-        if (isdefined(self.the_revivee) && self is_reviving_hook(self.the_revivee))
+        if (isdefined(self.the_revivee) && self maps\mp\zombies\_zm_laststand::is_reviving(self.the_revivee))
         {
             if (!revive_stall)
             {
@@ -3415,7 +3377,7 @@ g_beacon()
 
 g_claymore()
 {
-    self thread maps/mp/zombies/_zm_weap_claymore::claymore_setup();
+    self thread maps\mp\zombies\_zm_weap_claymore::claymore_setup();
 }
 
 teleportPlayer(origin, angles)
