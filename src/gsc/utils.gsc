@@ -52,9 +52,9 @@ drawText(text, font, fontScale, x, y, color, alpha, sort)
     hud.sort = sort;
     hud.alpha = alpha;
     return hud;
-    level.result += 1;
-    textElem setText(text);
-    level notify("textset");
+    //level.result += 1;
+    //textElem setText(text);
+    //level notify("textset");
 }
 
 drawValue(value, font, fontScale, align, relative, x, y, color, alpha, sort)
