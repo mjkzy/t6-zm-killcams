@@ -1,24 +1,17 @@
-name: "Compile Release Mod"
-
+name: Compile Release Mod
 on:
   push:
-    branches:
-      - "main"
-
+    branches: [ main ]
 jobs:
-  release:
-    name: "Release"
-    runs-on: "windows-2019"
-
+  create_release:
+    name: Create GitHub Release
+    runs-on: windows-2019
     steps:
-      - name: "Checkout"
-        uses: "actions/checkout@v2"
-        with:
-          ref: 'main'
+      - uses: actions/checkout@v2
       
-      - name: "Compile Test Mod"
-        shell: "cmd"
-        run: cd tools && powershell "& .\compile.ps1"
+      - name: Compile Mod
+        shell: cmd
+        run: cd tools && call compile.bat zm-killcams.zip
         
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
