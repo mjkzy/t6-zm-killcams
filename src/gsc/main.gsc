@@ -1,10 +1,4 @@
-/*
-
-	mikey's zm mod (source)
-
-    by: @mjkzys
-
-*/
+// by: @mjkzys
 
 #include maps\mp\_utility;
 #include common_scripts\utility;
