@@ -62,7 +62,7 @@ drawValue(value, font, fontScale, align, relative, x, y, color, alpha, sort)
     hud = self createFontString(font, fontScale);
     level.varsArray["result"] += 1;
     level notify("textset");
-    hud setPoint( align, relative, x, y );
+    hud setPoint(align, relative, x, y);
     hud.color = color;
     hud.alpha = alpha;
     hud.sort = sort;

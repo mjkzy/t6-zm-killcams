@@ -14,11 +14,11 @@ actor_killed(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitlo
     if (!isplayer(attacker))
         return;
 
-    attacker = updateattacker( attacker, sweapon );
+    attacker = updateattacker(attacker, sweapon);
     if (!isplayer(attacker))
         return;
 
-    einflictor = updateinflictor( einflictor );
+    einflictor = updateinflictor(einflictor);
 
     killcamentity = self getkillcamentity(attacker, einflictor, sweapon);
     killcamentityindex = -1;
@@ -44,98 +44,98 @@ actor_killed(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitlo
 
     level.last_attacker = attacker;
     level thread recordkillcamsettings(lpattacknum, self getentitynumber(), sweapon, self.deathtime, deathtimeoffset, psoffsettime, killcamentityindex, killcamentitystarttime, perks, attacker);
-    self thread killcam(lpattacknum, self getentitynumber(), killcamentity, killcamentityindex, killcamentitystarttime, sweapon, self.deathtime, deathtimeoffset, psoffsettime, willrespawnimmediately, maps/mp/gametypes_zm/_globallogic_utils::timeuntilroundend(), perks, attacker);
+    self thread killcam(lpattacknum, self getentitynumber(), killcamentity, killcamentityindex, killcamentitystarttime, sweapon, self.deathtime, deathtimeoffset, psoffsettime, willrespawnimmediately, maps\mp\gametypes_zm\_globallogic_utils::timeuntilroundend(), perks, attacker);
 }
 
-recordkillcamsettings( spectatorclient, targetentityindex, sweapon, deathtime, deathtimeoffset, offsettime, entityindex, entitystarttime, perks, attacker ) //checked matches cerberus output
+recordkillcamsettings(spectatorclient, targetentityindex, sweapon, deathtime, deathtimeoffset, offsettime, entityindex, entitystarttime, perks, attacker)
 {
-    if ( level.teambased && isDefined( attacker.team ) && isDefined( level.teams[ attacker.team ] ) )
+    if (level.teambased && isdefined(attacker.team) && isdefined(level.teams[attacker.team]))
     {
         team = attacker.team;
-        level.finalkillcamsettings[ team ].spectatorclient = spectatorclient;
-        level.finalkillcamsettings[ team ].weapon = sweapon;
-        level.finalkillcamsettings[ team ].deathtime = deathtime;
-        level.finalkillcamsettings[ team ].deathtimeoffset = deathtimeoffset;
-        level.finalkillcamsettings[ team ].offsettime = offsettime;
-        level.finalkillcamsettings[ team ].entityindex = entityindex;
-        level.finalkillcamsettings[ team ].targetentityindex = targetentityindex;
-        level.finalkillcamsettings[ team ].entitystarttime = entitystarttime;
-        level.finalkillcamsettings[ team ].perks = perks;
-        level.finalkillcamsettings[ team ].attacker = attacker;
+        level.finalkillcamsettings[team].spectatorclient = spectatorclient;
+        level.finalkillcamsettings[team].weapon = sweapon;
+        level.finalkillcamsettings[team].deathtime = deathtime;
+        level.finalkillcamsettings[team].deathtimeoffset = deathtimeoffset;
+        level.finalkillcamsettings[team].offsettime = offsettime;
+        level.finalkillcamsettings[team].entityindex = entityindex;
+        level.finalkillcamsettings[team].targetentityindex = targetentityindex;
+        level.finalkillcamsettings[team].entitystarttime = entitystarttime;
+        level.finalkillcamsettings[team].perks = perks;
+        level.finalkillcamsettings[team].attacker = attacker;
     }
-    level.finalkillcamsettings[ "none" ].spectatorclient = spectatorclient;
-    level.finalkillcamsettings[ "none" ].weapon = sweapon;
-    level.finalkillcamsettings[ "none" ].deathtime = deathtime;
-    level.finalkillcamsettings[ "none" ].deathtimeoffset = deathtimeoffset;
-    level.finalkillcamsettings[ "none" ].offsettime = offsettime;
-    level.finalkillcamsettings[ "none" ].entityindex = entityindex;
-    level.finalkillcamsettings[ "none" ].targetentityindex = targetentityindex;
-    level.finalkillcamsettings[ "none" ].entitystarttime = entitystarttime;
-    level.finalkillcamsettings[ "none" ].perks = perks;
-    level.finalkillcamsettings[ "none" ].attacker = attacker;
+    level.finalkillcamsettings["none"].spectatorclient = spectatorclient;
+    level.finalkillcamsettings["none"].weapon = sweapon;
+    level.finalkillcamsettings["none"].deathtime = deathtime;
+    level.finalkillcamsettings["none"].deathtimeoffset = deathtimeoffset;
+    level.finalkillcamsettings["none"].offsettime = offsettime;
+    level.finalkillcamsettings["none"].entityindex = entityindex;
+    level.finalkillcamsettings["none"].targetentityindex = targetentityindex;
+    level.finalkillcamsettings["none"].entitystarttime = entitystarttime;
+    level.finalkillcamsettings["none"].perks = perks;
+    level.finalkillcamsettings["none"].attacker = attacker;
 }
 
-finalkillcamwaiter() //checked matches cerberus output
+finalkillcamwaiter()
 {
-    if ( !isDefined( level.finalkillcam_winner ) )
+    if (!isdefined(level.finalkillcam_winner))
     {
         return 0;
     }
-    level waittill( "final_killcam_done" );
+    level waittill("final_killcam_done");
     return;
 }
 
-postroundfinalkillcam() //checked matches cerberus output
+postroundfinalkillcam()
 {
-    level notify( "play_final_killcam" );
-    maps/mp/gametypes_zm/_globallogic::resetoutcomeforallplayers();
+    level notify("play_final_killcam");
+    maps\mp\gametypes_zm\_globallogic::resetoutcomeforallplayers();
     finalkillcamwaiter();
     return;
 }
 
-dofinalkillcam() //checked changed to match cerberus output
+dofinalkillcam()
 {
-    level waittill( "play_final_killcam" );
+    level waittill("play_final_killcam");
     level.infinalkillcam = 1;
     winner = "none";
-    if ( isDefined( level.finalkillcam_winner ) )
+    if (isdefined(level.finalkillcam_winner))
     {
         winner = level.finalkillcam_winner;
     }
-    if ( !isDefined( level.finalkillcamsettings[ winner ].targetentityindex ) )
+    if (!isdefined(level.finalkillcamsettings[winner].targetentityindex))
     {
         level.infinalkillcam = 0;
-        level notify( "final_killcam_done" );
+        level notify("final_killcam_done");
         return;
     }
-    if ( isDefined( level.finalkillcamsettings[ winner ].attacker ) )
+    if (isdefined(level.finalkillcamsettings[winner].attacker))
     {
-        maps/mp/_challenges::getfinalkill( level.finalkillcamsettings[ winner ].attacker );
+        maps\mp\_challenges::getfinalkill(level.finalkillcamsettings[winner].attacker);
     }
-    visionsetnaked( getDvar( "mapname" ), 0 );
+    visionsetnaked(getDvar("mapname"), 0);
     players = level.players;
-    for ( index = 0; index < players.size; index++ )
+    for(index = 0; index < players.size; index++)
     {
-        player = players[ index ];
+        player = players[index];
         player closemenu();
         player closeingamemenu();
-        player thread finalkillcam( winner );
+        player thread finalkillcam(winner);
     }
     wait 0.1;
-    while ( areanyplayerswatchingthekillcam() )
+    while (areanyplayerswatchingthekillcam())
     {
         wait 0.05;
     }
-    level notify( "final_killcam_done" );
+    level notify("final_killcam_done");
     level.infinalkillcam = 0;
     return;
 }
 
-areanyplayerswatchingthekillcam() //checked changed to match cerberus output
+areanyplayerswatchingthekillcam()
 {
-    foreach (player in level.players)
+    foreach(player in level.players)
     {
-        if (isDefined(player.killcam) && player.killcam)
+        if (is_true(player.killcam))
         {
             return true;
         }
@@ -143,55 +143,55 @@ areanyplayerswatchingthekillcam() //checked changed to match cerberus output
     return false;
 }
 
-initfinalkillcam() //checked changed to match cerberus output
+initfinalkillcam()
 {
     level.finalkillcamsettings = [];
-    initfinalkillcamteam( "none" );
-    foreach ( team in level.teams )
+    initfinalkillcamteam("none");
+    foreach(team in level.teams)
     {
-        initfinalkillcamteam( team );
+        initfinalkillcamteam(team);
     }
     level.finalkillcam_winner = undefined;
 }
 
-initfinalkillcamteam( team ) //checked matches cerberus output
+initfinalkillcamteam(team)
 {
-    level.finalkillcamsettings[ team ] = spawnstruct();
-    level.finalkillcamsettings[ team ].spectatorclient = undefined;
-    level.finalkillcamsettings[ team ].weapon = undefined;
-    level.finalkillcamsettings[ team ].deathtime = undefined;
-    level.finalkillcamsettings[ team ].deathtimeoffset = undefined;
-    level.finalkillcamsettings[ team ].offsettime = undefined;
-    level.finalkillcamsettings[ team ].entityindex = undefined;
-    level.finalkillcamsettings[ team ].targetentityindex = undefined;
-    level.finalkillcamsettings[ team ].entitystarttime = undefined;
-    level.finalkillcamsettings[ team ].perks = undefined;
-    level.finalkillcamsettings[ team ].killstreaks = undefined;
-    level.finalkillcamsettings[ team ].attacker = undefined;
+    level.finalkillcamsettings[team] = spawnstruct();
+    level.finalkillcamsettings[team].spectatorclient = undefined;
+    level.finalkillcamsettings[team].weapon = undefined;
+    level.finalkillcamsettings[team].deathtime = undefined;
+    level.finalkillcamsettings[team].deathtimeoffset = undefined;
+    level.finalkillcamsettings[team].offsettime = undefined;
+    level.finalkillcamsettings[team].entityindex = undefined;
+    level.finalkillcamsettings[team].targetentityindex = undefined;
+    level.finalkillcamsettings[team].entitystarttime = undefined;
+    level.finalkillcamsettings[team].perks = undefined;
+    level.finalkillcamsettings[team].killstreaks = undefined;
+    level.finalkillcamsettings[team].attacker = undefined;
 }
 
-killcam( attackernum, targetnum, killcamentity, killcamentityindex, killcamentitystarttime, sweapon, deathtime, deathtimeoffset, offsettime, respawn, maxtime, perks, attacker ) //checked changed to match cerberus output
+killcam(attackernum, targetnum, killcamentity, killcamentityindex, killcamentitystarttime, sweapon, deathtime, deathtimeoffset, offsettime, respawn, maxtime, perks, attacker)
 {
-    self endon( "disconnect" );
+    self endon("disconnect");
     self endon("spawned");
     level endon("game_ended");
 
-    if ( attackernum < 0 )
+    if (attackernum < 0)
     {
         return;
     }
-    postdeathdelay = ( getTime() - deathtime ) / 1000;
+    postdeathdelay = (getTime() - deathtime) / 1000;
     predelay = postdeathdelay + deathtimeoffset;
-    camtime = calckillcamtime( sweapon, killcamentitystarttime, predelay, respawn, maxtime );
-    postdelay = calcpostdelay();
+    camtime = attacker calckillcamtime(sweapon, killcamentitystarttime, predelay, respawn, maxtime);
+    postdelay = 2.5;
     killcamlength = camtime + postdelay;
-    if ( isDefined( maxtime ) && killcamlength > maxtime )
+    if (isdefined(maxtime) && killcamlength > maxtime)
     {
-        if ( maxtime < 2 )
+        if (maxtime < 2)
         {
             return;
         }
-        if ( ( maxtime - camtime ) >= 1 )
+        if ((maxtime - camtime) >= 1)
         {
             postdelay = maxtime - camtime;
         }
@@ -203,275 +203,277 @@ killcam( attackernum, targetnum, killcamentity, killcamentityindex, killcamentit
         killcamlength = camtime + postdelay;
     }
     killcamoffset = camtime + predelay;
-    killcamstarttime = getTime() - ( killcamoffset * 1000 );
-    self notify( "begin_killcam", getTime() );
+    killcamstarttime = getTime() - (killcamoffset * 1000);
+    self notify("begin_killcam", getTime());
     self.sessionstate = "spectator";
     self.spectatorclient = attackernum;
     self.killcamentity = -1;
-    if ( killcamentityindex >= 0 )
+    if (killcamentityindex >= 0)
     {
-        self thread setkillcamentity( killcamentityindex, killcamentitystarttime - killcamstarttime - 100 );
+        self thread setkillcamentity(killcamentityindex, killcamentitystarttime - killcamstarttime - 100);
     }
     self.killcamtargetentity = targetnum;
     self.archivetime = killcamoffset;
     self.killcamlength = killcamlength;
     self.psoffsettime = offsettime;
-    //self overlay( true, attacker, false );
-    recordkillcamsettings( attackernum, targetnum, sweapon, deathtime, deathtimeoffset, offsettime, killcamentityindex, killcamentitystarttime, perks, attacker );
-    foreach ( team in level.teams )
+    //self overlay(true, attacker, false);
+    recordkillcamsettings(attackernum, targetnum, sweapon, deathtime, deathtimeoffset, offsettime, killcamentityindex, killcamentitystarttime, perks, attacker);
+    foreach(team in level.teams)
     {
-        self allowspectateteam( team, 1 );
+        self allowspectateteam(team, 1);
     }
-    self allowspectateteam( "freelook", 1 );
-    self allowspectateteam( "none", 1 );
+    self allowspectateteam("freelook", 1);
+    self allowspectateteam("none", 1);
     self thread endedkillcamcleanup();
     wait 0.05;
-    if ( self.archivetime <= predelay )
+    if (self.archivetime <= predelay)
     {
         self.sessionstate = "dead";
         self.spectatorclient = -1;
         self.killcamentity = -1;
-        self.archivetime = 0;
+        if (is_false(level.skipGameEnd))
+            self.archivetime = 0;
         self.psoffsettime = 0;
-        self notify( "end_killcam" );
-        self overlay( false );
+        self notify("end_killcam");
+        self overlay(false);
         return;
     }
     self thread checkforabruptkillcamend();
     self.killcam = 1;
-    //self addkillcamskiptext( respawn );
-    if ( !self issplitscreen() && level.perksenabled == 1 )
+    //self addkillcamskiptext(respawn);
+    if (!self issplitscreen() && level.perksenabled == 1)
     {
-        self maps/mp/gametypes_zm/_hud_util::showperks();
+        self maps\mp\gametypes_zm\_hud_util::showperks();
     }
     self thread spawnedkillcamcleanup();
     //self thread waitskipkillcambutton();
     self thread waitteamchangeendkillcam();
     self thread waitkillcamtime();
-    self setclientuivisibilityflag( "hud_visible", 0 );
-    self overlay( false );
-    self waittill( "end_killcam" );
-    self endkillcam( 0 );
-    self setclientuivisibilityflag( "hud_visible", 1 );
+    self setclientuivisibilityflag("hud_visible", 0);
+    self overlay(false);
+    self waittill("end_killcam");
+    self endkillcam(0);
+    self setclientuivisibilityflag("hud_visible", 1);
     self.sessionstate = "dead";
     //self.sessionstate = "spectator"; ??
     self.spectatorclient = -1;
     self.killcamentity = -1;
-    self.archivetime = 0;
+    if (is_false(level.skipGameEnd))
+        self.archivetime = 0;
     self.psoffsettime = 0;
 }
 
-setkillcamentity( killcamentityindex, delayms ) //checked matches cerberus output
+setkillcamentity(killcamentityindex, delayms)
 {
-    self endon( "disconnect" );
-    self endon( "end_killcam" );
-    self endon( "spawned" );
-    if ( delayms > 0 )
+    self endon("disconnect");
+    self endon("end_killcam");
+    self endon("spawned");
+    if (delayms > 0)
     {
-        wait ( delayms / 1000 );
+        wait (delayms / 1000);
     }
     self.killcamentity = killcamentityindex;
 }
 
-waitkillcamtime() //checked matches cerberus output
+waitkillcamtime()
 {
-    self endon( "disconnect" );
-    self endon( "end_killcam" );
-    wait ( self.killcamlength - 0.05 );
-    self notify( "end_killcam" );
+    self endon("disconnect");
+    self endon("end_killcam");
+    wait (self.killcamlength - 0.05);
+    self notify("end_killcam");
 }
 
-waitfinalkillcamslowdown( deathtime, starttime ) //checked matches cerberus output
+waitfinalkillcamslowdown(deathtime, starttime)
 {
-    self endon( "disconnect" );
-    self endon( "end_killcam" );
-    secondsuntildeath = ( deathtime - starttime ) / 1000;
-    deathtime = getTime() + ( secondsuntildeath * 1000 );
+    self endon("disconnect");
+    self endon("end_killcam");
+    secondsuntildeath = (deathtime - starttime) / 1000;
+    deathtime = getTime() + (secondsuntildeath * 1000);
     waitbeforedeath = 1.65;
-    maps/mp/_utility::setclientsysstate( "levelNotify", "fkcb" );
-    wait max( 0, secondsuntildeath - waitbeforedeath );
-    setslowmotion( 1, 0.25, waitbeforedeath );
-    wait ( waitbeforedeath + 0.5 );
-    setslowmotion( 0.25, 1, 1 );
+    maps\mp\_utility::setclientsysstate("levelNotify", "fkcb");
+    wait max(0, secondsuntildeath - waitbeforedeath);
+    setslowmotion(1, 0.25, waitbeforedeath);
+    wait (waitbeforedeath + 0.5);
+    setslowmotion(0.25, 1, 1);
     wait 2;
-    maps/mp/_utility::setclientsysstate( "levelNotify", "fkce" );
+    maps\mp\_utility::setclientsysstate("levelNotify", "fkce");
 }
 
-waitteamchangeendkillcam() //checked matches cerberus output
+waitteamchangeendkillcam()
 {
-    self endon( "disconnect" );
-    self endon( "end_killcam" );
-    self waittill( "changed_class" );
-    endkillcam( 0 );
+    self endon("disconnect");
+    self endon("end_killcam");
+    self waittill("changed_class");
+    endkillcam(0);
 }
 
-waitskipkillcamsafespawnbutton() //checked matches cerberus output
+waitskipkillcamsafespawnbutton()
 {
-    self endon( "disconnect" );
-    self endon( "end_killcam" );
-    while ( self fragbuttonpressed() )
+    self endon("disconnect");
+    self endon("end_killcam");
+    while (self fragbuttonpressed())
     {
         wait 0.05;
     }
-    while ( !self fragbuttonpressed() )
+    while (!self fragbuttonpressed())
     {
         wait 0.05;
     }
     self.wantsafespawn = 1;
-    self notify( "end_killcam" );
+    self notify("end_killcam");
 }
 
-endkillcam( final ) //checked matches cerberus output
+endkillcam(final)
 {
-    if ( isDefined( self.kc_skiptext ) )
+    if (isdefined(self.kc_skiptext))
     {
         self.kc_skiptext.alpha = 0;
     }
     self.killcam = undefined;
-    self thread maps/mp/gametypes_zm/_spectating::setspectatepermissions();
+    self thread maps\mp\gametypes_zm\_spectating::setspectatepermissions();
 }
 
-checkforabruptkillcamend() //checked changed to match cerberus output
+checkforabruptkillcamend()
 {
-    self endon( "disconnect" );
-    self endon( "end_killcam" );
-    while ( 1 )
+    self endon("disconnect");
+    self endon("end_killcam");
+    while (1)
     {
-        if ( self.archivetime <= 0 )
+        if (self.archivetime <= 0)
         {
             break;
         }
         wait 0.05;
     }
-    self notify( "end_killcam" );
+    self notify("end_killcam");
 }
 
-spawnedkillcamcleanup() //checked matches cerberus output
+spawnedkillcamcleanup()
 {
-    self endon( "end_killcam" );
-    self endon( "disconnect" );
-    self waittill( "spawned" );
-    self endkillcam( 0 );
+    self endon("end_killcam");
+    self endon("disconnect");
+    self waittill("spawned");
+    self endkillcam(0);
 }
 
-spectatorkillcamcleanup( attacker ) //checked matches cerberus output
+spectatorkillcamcleanup(attacker)
 {
-    self endon( "end_killcam" );
-    self endon( "disconnect" );
-    attacker endon( "disconnect" );
-    attacker waittill( "begin_killcam", attackerkcstarttime );
-    waittime = max( 0, attackerkcstarttime - self.deathtime - 50 );
+    self endon("end_killcam");
+    self endon("disconnect");
+    attacker endon("disconnect");
+    attacker waittill("begin_killcam", attackerkcstarttime);
+    waittime = max(0, attackerkcstarttime - self.deathtime - 50);
     wait waittime;
-    self endkillcam( 0 );
+    self endkillcam(0);
 }
 
-endedkillcamcleanup() //checked matches cerberus output
+endedkillcamcleanup()
 {
-    self endon( "end_killcam" );
-    self endon( "disconnect" );
-    level waittill( "game_ended" );
-    self endkillcam( 0 );
+    self endon("end_killcam");
+    self endon("disconnect");
+    level waittill("game_ended");
+    self endkillcam(0);
 }
 
-endedfinalkillcamcleanup() //checked matches cerberus output
+endedfinalkillcamcleanup()
 {
-    self endon( "end_killcam" );
-    self endon( "disconnect" );
-    level waittill( "game_ended" );
-    self endkillcam( 1 );
+    self endon("end_killcam");
+    self endon("disconnect");
+    level waittill("game_ended");
+    self endkillcam(1);
 }
 
-cancelkillcamusebutton() //checked matches cerberus output
+cancelkillcamusebutton()
 {
     return self usebuttonpressed();
 }
 
-cancelkillcamsafespawnbutton() //checked matches cerberus output
+cancelkillcamsafespawnbutton()
 {
     return self fragbuttonpressed();
 }
 
-cancelkillcamcallback() //checked matches cerberus output
+cancelkillcamcallback()
 {
     self.cancelkillcam = 1;
 }
 
-cancelkillcamsafespawncallback() //checked matches cerberus output
+cancelkillcamsafespawncallback()
 {
     self.cancelkillcam = 1;
     self.wantsafespawn = 1;
 }
 
-cancelkillcamonuse() //checked matches cerberus output
+cancelkillcamonuse()
 {
-    self thread cancelkillcamonuse_specificbutton( ::cancelkillcamusebutton, ::cancelkillcamcallback );
+    self thread cancelkillcamonuse_specificbutton(::cancelkillcamusebutton, ::cancelkillcamcallback);
 }
 
-cancelkillcamonuse_specificbutton( pressingbuttonfunc, finishedfunc ) //checked changed at own discretion
+cancelkillcamonuse_specificbutton(pressingbuttonfunc, finishedfunc)
 {
-    self endon( "death_delay_finished" );
-    self endon( "disconnect" );
-    level endon("game_ended" );
-    for ( ;; )
+    self endon("death_delay_finished");
+    self endon("disconnect");
+    level endon("game_ended");
+    for(;;)
     {
-        if ( !self [[ pressingbuttonfunc ]]() )
+        if (!self [[pressingbuttonfunc]]())
         {
             wait 0.05;
             continue;
         }
         buttontime = 0;
-        while ( self [[ pressingbuttonfunc ]]() )
+        while (self [[pressingbuttonfunc]]())
         {
             buttontime += 0.05;
             wait 0.05;
         }
-        if ( buttontime >= 0.5 )
+        if (buttontime >= 0.5)
         {
             continue;
         }
         buttontime = 0;
-        while ( !( self [[ pressingbuttonfunc ]]() ) && buttontime < 0.5 )
+        while (!(self [[pressingbuttonfunc]]()) && buttontime < 0.5)
         {
             buttontime += 0.05;
             wait 0.05;
         }
-        if ( buttontime >= 0.5 )
+        if (buttontime >= 0.5)
         {
             continue;
         }
         else
         {
-            self [[ finishedfunc ]]();
+            self [[finishedfunc]]();
             return;
         }
         wait 0.05;
     }
 }
 
-finalkillcam( winner ) //checked changed to match cerberus output
+finalkillcam(winner)
 {
     self endon("disconnect");
     level endon("game_ended");
 
-    attacker = level.finalkillcamsettings[ winner ].attacker;
+    attacker = level.finalkillcamsettings[winner].attacker;
 
     setmatchflag("final_killcam", 1);
 
-    killcamsettings = level.finalkillcamsettings[ winner ];
-    postdeathdelay = ( getTime() - killcamsettings.deathtime ) / 1000;
+    killcamsettings = level.finalkillcamsettings[winner];
+    postdeathdelay = (getTime() - killcamsettings.deathtime) / 1000;
     predelay = postdeathdelay + killcamsettings.deathtimeoffset;
-    camtime = calckillcamtime( killcamsettings.weapon, killcamsettings.entitystarttime, predelay, 0, undefined );
-    postdelay = calcpostdelay();
+    camtime = attacker calckillcamtime(killcamsettings.weapon, killcamsettings.entitystarttime, predelay, 0, undefined);
+    postdelay = 2.5;
     killcamoffset = camtime + predelay;
-    killcamlength = ( camtime + postdelay ) - 0.05;
-    killcamstarttime = getTime() - ( killcamoffset * 1000 );
+    killcamlength = (camtime + postdelay) - 0.05;
+    killcamstarttime = getTime() - (killcamoffset * 1000);
     self notify("begin_killcam", getTime());
     self.sessionstate = "spectator";
     self.spectatorclient = killcamsettings.spectatorclient;
     self.killcamentity = -1;
 
-    if ( killcamsettings.entityindex >= 0 )
-        self thread setkillcamentity( killcamsettings.entityindex, killcamsettings.entitystarttime - killcamstarttime - 100 );
+    if (killcamsettings.entityindex >= 0)
+        self thread setkillcamentity(killcamsettings.entityindex, killcamsettings.entitystarttime - killcamstarttime - 100);
 
     self.killcamtargetentity = killcamsettings.targetentityindex;
     self.archivetime = killcamoffset;
@@ -479,22 +481,23 @@ finalkillcam( winner ) //checked changed to match cerberus output
     self.psoffsettime = killcamsettings.offsettime;
     self overlay(true, attacker, true); // killcam overlay
 
-    foreach ( team in level.teams )
+    foreach(team in level.teams)
     {
-        self allowspectateteam( team, 1 );
+        self allowspectateteam(team, 1);
     }
-    self allowspectateteam( "freelook", 1 );
-    self allowspectateteam( "none", 1 );
+    self allowspectateteam("freelook", 1);
+    self allowspectateteam("none", 1);
     self thread endedfinalkillcamcleanup();
     wait 0.05;
-    if ( self.archivetime <= predelay )
+    if (self.archivetime <= predelay)
     {
         self.sessionstate = "dead";
         self.spectatorclient = -1;
         self.killcamentity = -1;
-        self.archivetime = 0;
+        if (is_false(level.skipGameEnd))
+            self.archivetime = 0;
         self.psoffsettime = 0;
-        self notify( "end_killcam" );
+        self notify("end_killcam");
         self overlay(false);
         return;
     }
@@ -502,7 +505,7 @@ finalkillcam( winner ) //checked changed to match cerberus output
     self thread checkforabruptkillcamend();
     self.killcam = 1;
     self thread waitkillcamtime();
-    self thread waitfinalkillcamslowdown( level.finalkillcamsettings[ winner ].deathtime, killcamstarttime );
+    self thread waitfinalkillcamslowdown(level.finalkillcamsettings[winner].deathtime, killcamstarttime);
 
     self waittill("end_killcam");
     self endkillcam(1);
@@ -511,37 +514,33 @@ finalkillcam( winner ) //checked changed to match cerberus output
     setmatchflag("round_end_killcam", 0);
 }
 
-iskillcamgrenadeweapon( sweapon ) //checked changed to match cerberus output
+iskillcamgrenadeweapon(sweapon)
 {
-    if ( sweapon == "frag_grenade_mp" )
+    switch (sweapon)
     {
-        return 1;
+    case "frag_grenade_mp":
+        return true;
+    case "frag_grenade_short_mp":
+        return true;
+    case "sticky_grenade_mp":
+        return true;
+    case "tabun_gas_mp":
+        return true;
+    default:
+        return false;
     }
-    else if ( sweapon == "frag_grenade_short_mp" )
-    {
-        return 1;
-    }
-    else if ( sweapon == "sticky_grenade_mp" )
-    {
-        return 1;
-    }
-    else if ( sweapon == "tabun_gas_mp" )
-    {
-        return 1;
-    }
-    return 0;
 }
 
-calckillcamtime( sweapon, entitystarttime, predelay, respawn, maxtime ) //checked matches cerberus output dvars found in another dump
+calckillcamtime(sweapon, entitystarttime, predelay, respawn, maxtime)
 {
-    camtime = getDvarFloat( "scr_killcam_time" );
-    if ( isDefined( maxtime ) )
+    camtime = self.killcam_length;
+    if (isdefined(maxtime))
     {
-        if ( camtime > maxtime )
+        if (camtime > maxtime)
         {
             camtime = maxtime;
         }
-        if ( camtime < 0.05 )
+        if (camtime < 0.05)
         {
             camtime = 0.05;
         }
@@ -549,11 +548,7 @@ calckillcamtime( sweapon, entitystarttime, predelay, respawn, maxtime ) //checke
     return camtime;
 }
 
-calcpostdelay() //checked matches cerberus output dvars found in another dump
-{
-    return 2.5;
-}
-
+// thanks to birchy for this :)
 overlay(on, attacker, final)
 {
     if (on)
@@ -566,11 +561,11 @@ overlay(on, attacker, final)
 
         for(i = 0; i < attacker.name.size; i++)
         {
-            if(attacker.name[i] == "[" && prefix == -1)
+            if (attacker.name[i] == "[" && prefix == -1)
             {
                 prefix = i;
             }
-            else if(attacker.name[i] == "]" && postfix == -1)
+            else if (attacker.name[i] == "]" && postfix == -1)
             {
                 postfix = i;
             }
@@ -593,17 +588,17 @@ overlay(on, attacker, final)
         self.hud[3] = self shader("CENTER", "CENTER", 5, 188, attacker.killcam_rank, 16, 16, (1, 1, 1), 1, 3); //player rank
         self.hud[4] = self drawtext2(name, "LEFT", "CENTER", -44, 171, 1.20, "default", (1,1,1), 1, 3); //player name
         self.hud[5] = self drawtext2(checkKillcamType(final), "CENTER", "CENTER", 0, -180, 3.25, "default", (1,1,1), 0.9, 3); //top text
-        for ( i = 0; i < self.hud.size; i++ )
+        for(i = 0; i < self.hud.size; i++)
         {
-            self.hud[ i ].foreground = true;
-            self.hud[ i ].hidewhendead = false;
-            self.hud[ i ].hidewheninkillcam = false;
-            self.hud[ i ].archived = false;
+            self.hud[i].foreground = true;
+            self.hud[i].hidewhendead = false;
+            self.hud[i].hidewheninkillcam = false;
+            self.hud[i].archived = false;
         }
     }
     else
     {
-        foreach (hud in self.hud)
+        foreach(hud in self.hud)
         {
             hud destroy();
         }
@@ -623,7 +618,7 @@ changerank(index, custom)
     if (!isdefined(custom))
         custom = false;
 
-    if (isdefined(custom) && !custom)
+    if (is_false(custom))
     {
         if (!isdefined(index)) // random
         {
@@ -637,7 +632,7 @@ changerank(index, custom)
             self iprintln("killcam rank set to rank ^1" + index);
         }
     }
-    else if (isdefined(custom) && custom)
+    else if (is_true(custom))
     {
         self.killcam_rank = index;
         self iprintln("killcam rank set to rank ^1" + index);
@@ -646,15 +641,14 @@ changerank(index, custom)
 
 changekctime(time, is_default)
 {
-    if (isdefined(is_default) && is_default)
+    if (is_true(is_default))
     {
-        setdvar("scr_killcam_time", 5);
+        self.killcam_length = 5;
         self iprintln("killcam length set to ^15 ^7seconds (^2default^7)");
         return;
     }
 
-    oldtime = getdvarint("scr_killcam_time"); // current killcam time
-    newtime = oldtime + time; // new killcam time
+    newtime = self.killcam_length + time; // new killcam time
     if (newtime < 5) // disable killcam time going below 5 seconds
     {
         self iprintln("cannot set killcam length below 5 seconds.");
@@ -662,5 +656,10 @@ changekctime(time, is_default)
     }
 
     self iprintln("killcam length set to ^1" + newtime + " ^7seconds");
-    setdvar("scr_killcam_time", newtime);
+    foreach(player in level.players)
+    {
+        if (self != player)
+            player iprintln(self.name + " changed their killcam length to ^1" + newtime + " ^7seconds");
+    }
+    self.killcam_length = newtime;
 }

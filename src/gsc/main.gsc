@@ -6,47 +6,45 @@
 
 */
 
-#include maps/mp/_utility;
-#include common_scripts/utility;
-#include maps/mp/gametypes_zm/_hud_util;
-#include maps/mp/gametypes_zm/_hud_message;
-#include maps/mp/zombies/_zm;
-#include maps/mp/zombies/_zm_audio;
-#include maps/mp/zombies/_zm_score;
-#include maps/mp/zombies/_zm_spawner;
-#include maps/mp/gametypes_zm/_globallogic_spawn;
-#include maps/mp/gametypes_zm/_spectating;
-#include maps/mp/_challenges;
-#include maps/mp/gametypes_zm/_globallogic;
-#include maps/mp/gametypes_zm/_globallogic_audio;
-#include maps/mp/gametypes_zm/_spawnlogic;
-#include maps/mp/gametypes_zm/_rank;
-#include maps/mp/gametypes_zm/_weapons;
-#include maps/mp/gametypes_zm/_spawning;
-#include maps/mp/gametypes_zm/_globallogic_utils;
-#include maps/mp/gametypes_zm/_globallogic_player;
-#include maps/mp/gametypes_zm/_globallogic_ui;
-#include maps/mp/gametypes_zm/_globallogic_score;
-#include maps/mp/gametypes_zm/_persistence;
-#include maps/mp/zombies/_zm_weapons;
-#include maps/mp/zombies/_zm_utility;
+#include maps\mp\_utility;
+#include common_scripts\utility;
+#include maps\mp\gametypes_zm\_hud_util;
+#include maps\mp\gametypes_zm\_hud_message;
+#include maps\mp\zombies\_zm;
+#include maps\mp\zombies\_zm_audio;
+#include maps\mp\zombies\_zm_score;
+#include maps\mp\zombies\_zm_spawner;
+#include maps\mp\gametypes_zm\_globallogic_spawn;
+#include maps\mp\gametypes_zm\_spectating;
+#include maps\mp\_challenges;
+#include maps\mp\gametypes_zm\_globallogic;
+#include maps\mp\gametypes_zm\_globallogic_audio;
+#include maps\mp\gametypes_zm\_spawnlogic;
+#include maps\mp\gametypes_zm\_rank;
+#include maps\mp\gametypes_zm\_weapons;
+#include maps\mp\gametypes_zm\_spawning;
+#include maps\mp\gametypes_zm\_globallogic_utils;
+#include maps\mp\gametypes_zm\_globallogic_player;
+#include maps\mp\gametypes_zm\_globallogic_ui;
+#include maps\mp\gametypes_zm\_globallogic_score;
+#include maps\mp\gametypes_zm\_persistence;
+#include maps\mp\zombies\_zm_weapons;
+#include maps\mp\zombies\_zm_utility;
 
 main()
 {
-    replacefunc(maps/mp/zombies/_zm_laststand::is_reviving, ::is_reviving_hook);
+    replacefunc(maps\mp\zombies\_zm_laststand::is_reviving, ::is_reviving_hook);
 }
 
 init()
 {
-    setdvar("scr_killcam_time", 5);
-
     init_precache();
     init_dvars();
 
     // variables
     level.perk_purchase_limit = 20;
     level.zombie_vars["zombie_use_failsafe"] = false;
-    set_zombie_var( "zombie_use_failsafe", 0 );
+    set_zombie_var("zombie_use_failsafe", 0);
     level.player_out_of_playable_area_monitor = false;
     level.player_too_many_weapons_monitor = false;
 
@@ -63,8 +61,8 @@ init()
     level.round_based = false;                // victory by default
     level.infinalkillcam = 0;
 
-    maps/mp/zombies/_zm_spawner::register_zombie_damage_callback(::do_hitmarker);
-    maps/mp/zombies/_zm_spawner::register_zombie_death_event_callback(::do_hitmarker_death);
+    maps\mp\zombies\_zm_spawner::register_zombie_damage_callback(::do_hitmarker);
+    maps\mp\zombies\_zm_spawner::register_zombie_death_event_callback(::do_hitmarker_death);
 
     level thread init_killfeed();
     level thread onplayerconnect();
@@ -81,6 +79,8 @@ init()
     level.debug_mode = getdvarintdefault("debug_mode", 0);
     level.result = 0;
 
+    level.zombie_vars["zombie_use_failsafe"] = 0;
+
     level thread initfinalkillcam();
     level thread doFinalKillcam();
 }
@@ -90,13 +90,13 @@ set_pap_price()
     precachestring(&"ZOMBIE_PERK_PACKAPUNCH");
     precachestring(&"ZOMBIE_PERK_PACKAPUNCH_ATT");
 
-    level waittill( "Pack_A_Punch_on" );
+    level waittill("Pack_A_Punch_on");
 
-    pap_triggers = getentarray( "specialty_weapupgrade", "script_noteworthy" );
+    pap_triggers = getentarray("specialty_weapupgrade", "script_noteworthy");
     pap_trigger = pap_triggers[0];
     pap_trigger.cost = 0;
     pap_trigger.attachment_cost = 0;
-    pap_trigger sethintstring( &"ZOMBIE_PERK_PACKAPUNCH", pap_trigger.cost ); // reset hint msg to new price
+    pap_trigger sethintstring(&"ZOMBIE_PERK_PACKAPUNCH", pap_trigger.cost); // reset hint msg to new price
 }
 
 onPlayerConnect()
@@ -105,7 +105,7 @@ onPlayerConnect()
     {
         level waittill("connected", player);
 
-        if (!isDefined(player.hud_damagefeedback))
+        if (!isdefined(player.hud_damagefeedback))
             player thread init_player_hitmarkers();
 
         player thread onPlayerSpawned();
@@ -127,6 +127,7 @@ onPlayerSpawned()
     self.ufospeed = 20;
 
     self.killcam_rank = "zombies_rank_5"; // max rank by default
+    self.killcam_length = 5;
 
     init_afterhit();
 
@@ -134,7 +135,7 @@ onPlayerSpawned()
     {
         self waittill("spawned_player");
 
-        if (isdefined(level.intermission) && level.intermission)
+        if (is_true(level.intermission))
         {
             if (isalive(self))
             {
@@ -167,7 +168,7 @@ onPlayerSpawned()
         }
 
         // first spawn
-        if (isdefined(self.first) && self.first)
+        if (is_true(self.first))
         {
             if (!flag("initial_blackscreen_passed"))
             {
@@ -188,7 +189,7 @@ onPlayerSpawned()
 
 spawnplayer_hook()
 {
-    if (isdefined(level.infinalkillcam) && !level.infinalkillcam)
+    if (is_false(level.infinalkillcam))
     {
         thread [[level.spawnplayer_stub]]();
         return;
