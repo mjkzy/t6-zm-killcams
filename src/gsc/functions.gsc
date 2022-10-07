@@ -6,8 +6,6 @@
 
 init_precache()
 {
-    precachestring(&"PLATFORM_PRESS_TO_SKIP");
-    precachestring(&"PLATFORM_PRESS_TO_RESPAWN");
     precacheshader("white");
     precacheshader("zombies_rank_1");
     precacheshader("zombies_rank_2");
@@ -49,7 +47,7 @@ init_dvars()
     setdvar("player_lastStandBleedoutTime", 9999);
 }
 
-endgamewhenhit()
+end_game_when_hit()
 {
     level endon("game_ended");
 
@@ -255,15 +253,15 @@ customendgame()
     setmatchflag("disableIngameMenu", 1);
 
     // maps that crash reverting archive time
-    level.skipGameEnd = false;
+    level.skip_game_end = false;
     if (level.script == "zm_transit" || level.script == "zm_prison" || level.script == "zm_buried")
     {
-        level.skipGameEnd = true;
+        level.skip_game_end = true;
     }
 
     // load killcam here.
     postRoundFinalKillcam(); // call killcam here?
-    while (level.infinalkillcam == 1)
+    while (level.in_final_killcam == 1)
     {
         wait 0.05;
     }
@@ -285,7 +283,7 @@ customendgame()
     level notify("stop_intermission");
     logString("game ended");
 
-    if (!isdefined(level.skipGameEnd) || !level.skipGameEnd)
+    if (!isdefined(level.skip_game_end) || !level.skip_game_end)
         wait 10;
 
     exitlevel(false);
@@ -342,19 +340,6 @@ init_player_hitmarkers()
     self.hud_damagefeedback_red.archived = 1;
     self.hud_damagefeedback_red.color = (1, 0, 0);
     self.hud_damagefeedback_red setshader("damage_feedback", 24, 48);
-}
-
-updatedamagefeedback(mod, inflictor, death) //checked matches cerberus output
-{
-    if (!isplayer(self) || isdefined(self.disable_hitmarkers)) return;
-    if (isdefined(mod) && mod != "MOD_CRUSH" && mod != "MOD_GRENADE_SPLASH" && mod != "MOD_HIT_BY_OBJECT")
-    {
-        self.hud_damagefeedback setshader("damage_feedback", 24, 48);
-        self.hud_damagefeedback.alpha = 1;
-        self.hud_damagefeedback fadeovertime(1);
-        self.hud_damagefeedback.alpha = 0;
-    }
-    return 1;
 }
 
 displayGameEnd(winner)
@@ -520,26 +505,43 @@ determineTeamLogo()
     return "hud_status_dead";
 }
 
-do_hitmarker(mod, hitloc, hitorig, player, damage)
+// a improved updatedamagefeedback
+do_hitmarker_internal(mod, death)
 {
-    if (player != self)
+    if (!isplayer(self))
+        return;
+
+    if (!isdefined(death))
+        death = false;
+
+    if (isdefined(mod) && mod != "MOD_CRUSH" && mod != "MOD_GRENADE_SPLASH" && mod != "MOD_HIT_BY_OBJECT")
     {
-        player thread updatedamagefeedback(mod, player, 0);
-        player.points += 10;
+        self.hud_damagefeedback setshader("damage_feedback", 24, 48);
+        self.hud_damagefeedback.alpha = 1;
+        self.hud_damagefeedback fadeovertime(1);
+        self.hud_damagefeedback.alpha = 0;
     }
-    return 1;
+}
+
+do_hitmarker(mod, hit_location, hit_origin, player, amount)
+{
+    if (isdefined(player) && isplayer(player) && player != self)
+    {
+        player thread do_hitmarker_internal(mod);
+        player.points += 10; // forgot what this is for, lol?
+    }
+
+    return false;
 }
 
 do_hitmarker_death()
 {
-    if (self.attacker != self)
-    {
-        self.attacker thread updatedamagefeedback(self.damagemod, self.attacker, 1);
-    }
-    return 1;
+    // self is the zombie victim in this case
+    if (isdefined(self.attacker) && isplayer(self.attacker) && self.attacker != self)
+        self.attacker thread do_hitmarker_internal(self.damagemod, true);
 }
 
-drawZombiesCounter()
+zombies_counter()
 {
     level endon("endZmCounter");
     level.zombiesCounter = createServerFontString("hudsmall", 1.2);
@@ -1520,7 +1522,7 @@ togglezmcounter()
     if (!level.zombieCounter)
     {
         iprintln("zombies counter ^2on");
-        level thread drawZombiesCounter();
+        level thread zombies_counter();
     }
     else if (level.zombieCounter)
     {
@@ -2148,21 +2150,10 @@ iscool(nerd)
 
 dohitmarkerok()
 {
-    self playlocalsound("mpl_hit_alert");
     self.hud_damagefeedback setshader("damage_feedback", 24, 48);
     self.hud_damagefeedback.alpha = 1;
     self.hud_damagefeedback fadeovertime(1);
     self.hud_damagefeedback.alpha = 0;
-}
-
-init_killfeed()
-{
-    level.shader_weapons_list = strtok("specialty_quickrevive_zombies_pro voice_off voice_off_xboxlive voice_on_xboxlive menu_zm_weapons_ballista menu_mp_weapons_m14 hud_python zm_hud_icon_oneinch_clean hud_cymbal_monkey zom_hud_craftable_element_water zom_hud_craftable_element_lightning zom_hud_craftable_element_fire zom_hud_craftable_element_wind hud_obit_grenade_launcher_attach hud_obit_death_grenade_round menu_mp_weapons_knife menu_mp_weapons_1911 menu_mp_weapons_judge menu_mp_weapons_kard menu_mp_weapons_five_seven menu_mp_weapons_dual57s menu_mp_weapons_ak74u menu_mp_weapons_mp5 menu_mp_weapons_qcw menu_mp_weapons_870mcs menu_mp_weapons_rottweil72 menu_mp_weapons_saiga12 menu_mp_weapons_srm menu_mp_weapons_m16 menu_mp_weapons_saritch menu_mp_weapons_xm8 menu_mp_weapons_type95 menu_mp_weapons_tar21 menu_mp_weapons_galil menu_mp_weapons_fal menu_mp_weapons_rpd menu_mp_weapons_hamr menu_mp_weapons_dsr1 menu_mp_weapons_m82a menu_mp_weapons_rpg menu_mp_weapons_m32gl menu_zm_weapons_raygun menu_zm_weapons_jetgun menu_zm_weapons_shield menu_mp_weapons_ballistic_80 menu_mp_weapons_hk416 menu_mp_weapons_lsat menu_mp_weapons_an94 menu_mp_weapons_ar57 menu_mp_weapons_svu menu_zm_weapons_slipgun menu_zm_weapons_hell_shield menu_mp_weapons_minigun menu_zm_weapons_blundergat menu_zm_weapons_acidgat menu_mp_weapons_ak47 menu_mp_weapons_uzi menu_zm_weapons_thompson menu_zm_weapons_rnma voice_off_mute_xboxlive menu_zm_weapons_raygun_mark2 menu_zm_weapons_mc96 menu_zm_weapons_mg08 menu_zm_weapons_stg44 menu_mp_weapons_scar menu_mp_weapons_ksg menu_zm_weapons_mp40 menu_mp_weapons_evoskorpion menu_mp_weapons_ballista menu_zm_weapons_staff_air menu_zm_weapons_staff_fire menu_zm_weapons_staff_lightning menu_zm_weapons_staff_water menu_zm_weapons_tomb_shield hud_icon_claymore_256 hud_grenadeicon hud_icon_sticky_grenade hud_obit_knife hud_obit_ballistic_knife menu_mp_weapons_baretta menu_zm_weapons_taser menu_mp_weapons_baretta93r menu_mp_weapons_olympia hud_obit_death_crush menu_zm_weapons_bowie hud_icon_sticky_grenade", " ");
-
-    foreach(shader in level.shader_weapons_list)
-    {
-        precacheShader(shader);
-    }
 }
 
 get_ai_number()
@@ -2263,7 +2254,7 @@ setpoints()
 }
 
 // https://github.com/Jbleezy/BO2-Reimagined/blob/master/_zm_reimagined.gsc#L167
-buildbuildables()
+build_buildables()
 {
     // need a wait or else some buildables dont build
     wait 5;
@@ -2886,7 +2877,7 @@ buildable_get_last_piece()
 }
 
 // MOTD/Origins style buildables
-buildcraftables()
+build_craftables()
 {
     // need a wait or else some buildables dont build
     wait 5;

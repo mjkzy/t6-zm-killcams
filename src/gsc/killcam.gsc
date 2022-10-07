@@ -4,10 +4,25 @@
 
 */
 
-actor_killed(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime)
+init_killcam()
+{
+    level.in_final_killcam = false;
+
+    level.finalkillcamsettings = [];
+    initfinalkillcamteam("none");
+    foreach(team in level.teams)
+    {
+        initfinalkillcamteam(team);
+    }
+    level.finalkillcam_winner = undefined;
+
+    level thread do_final_killcam();
+}
+
+callbackactorkilled_stub(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime)
 {
     // call original
-    thread [[level.actor_killed_stub]](einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime);
+    thread [[level.callbackactorkilled_og]](einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime);
 
     if (self == attacker)
         return;
@@ -43,11 +58,10 @@ actor_killed(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitlo
     perks = [];
 
     level.last_attacker = attacker;
-    level thread recordkillcamsettings(lpattacknum, self getentitynumber(), sweapon, self.deathtime, deathtimeoffset, psoffsettime, killcamentityindex, killcamentitystarttime, perks, attacker);
-    self thread killcam(lpattacknum, self getentitynumber(), killcamentity, killcamentityindex, killcamentitystarttime, sweapon, self.deathtime, deathtimeoffset, psoffsettime, willrespawnimmediately, maps\mp\gametypes_zm\_globallogic_utils::timeuntilroundend(), perks, attacker);
+    level thread record_killcam_settings(lpattacknum, self getentitynumber(), sweapon, self.deathtime, deathtimeoffset, psoffsettime, killcamentityindex, killcamentitystarttime, perks, attacker);
 }
 
-recordkillcamsettings(spectatorclient, targetentityindex, sweapon, deathtime, deathtimeoffset, offsettime, entityindex, entitystarttime, perks, attacker)
+record_killcam_settings(spectatorclient, targetentityindex, sweapon, deathtime, deathtimeoffset, offsettime, entityindex, entitystarttime, perks, attacker)
 {
     if (level.teambased && isdefined(attacker.team) && isdefined(level.teams[attacker.team]))
     {
@@ -75,63 +89,70 @@ recordkillcamsettings(spectatorclient, targetentityindex, sweapon, deathtime, de
     level.finalkillcamsettings["none"].attacker = attacker;
 }
 
-finalkillcamwaiter()
+final_killcam_waiter()
 {
     if (!isdefined(level.finalkillcam_winner))
     {
-        return 0;
+        return;
     }
+
     level waittill("final_killcam_done");
-    return;
 }
 
 postroundfinalkillcam()
 {
     level notify("play_final_killcam");
     maps\mp\gametypes_zm\_globallogic::resetoutcomeforallplayers();
-    finalkillcamwaiter();
-    return;
+    final_killcam_waiter();
 }
 
-dofinalkillcam()
+do_final_killcam()
 {
     level waittill("play_final_killcam");
-    level.infinalkillcam = 1;
+
+    level.in_final_killcam = 1;
+
     winner = "none";
     if (isdefined(level.finalkillcam_winner))
     {
         winner = level.finalkillcam_winner;
     }
-    if (!isdefined(level.finalkillcamsettings[winner].targetentityindex))
+
+    settings = level.finalkillcamsettings[winner];
+    if (!isdefined(settingstargetentityindex))
     {
-        level.infinalkillcam = 0;
         level notify("final_killcam_done");
+        level.in_final_killcam = 0;
         return;
     }
-    if (isdefined(level.finalkillcamsettings[winner].attacker))
+
+    if (isdefined(settings.attacker))
     {
         maps\mp\_challenges::getfinalkill(level.finalkillcamsettings[winner].attacker);
     }
-    visionsetnaked(getDvar("mapname"), 0);
-    players = level.players;
-    for(index = 0; index < players.size; index++)
+
+    visionsetnaked(getdvar("mapname"), 0);
+
+    foreach (player in level.players)
     {
-        player = players[index];
         player closemenu();
         player closeingamemenu();
-        player thread finalkillcam(winner);
+        player thread final_killcam(winner);
     }
+
     wait 0.1;
-    while (areanyplayerswatchingthekillcam())
+
+    // wait for all killcams to finish watching killcam
+    while (are_any_players_watching())
     {
         wait 0.05;
     }
+
     level notify("final_killcam_done");
-    level.infinalkillcam = 0;
-    return;
+    level.in_final_killcam = 0;
 }
 
-areanyplayerswatchingthekillcam()
+are_any_players_watching()
 {
     foreach(player in level.players)
     {
@@ -141,17 +162,6 @@ areanyplayerswatchingthekillcam()
         }
     }
     return false;
-}
-
-initfinalkillcam()
-{
-    level.finalkillcamsettings = [];
-    initfinalkillcamteam("none");
-    foreach(team in level.teams)
-    {
-        initfinalkillcamteam(team);
-    }
-    level.finalkillcam_winner = undefined;
 }
 
 initfinalkillcamteam(team)
@@ -170,100 +180,7 @@ initfinalkillcamteam(team)
     level.finalkillcamsettings[team].attacker = undefined;
 }
 
-killcam(attackernum, targetnum, killcamentity, killcamentityindex, killcamentitystarttime, sweapon, deathtime, deathtimeoffset, offsettime, respawn, maxtime, perks, attacker)
-{
-    self endon("disconnect");
-    self endon("spawned");
-    level endon("game_ended");
-
-    if (attackernum < 0)
-    {
-        return;
-    }
-    postdeathdelay = (getTime() - deathtime) / 1000;
-    predelay = postdeathdelay + deathtimeoffset;
-    camtime = attacker calckillcamtime(sweapon, killcamentitystarttime, predelay, respawn, maxtime);
-    postdelay = 2.5;
-    killcamlength = camtime + postdelay;
-    if (isdefined(maxtime) && killcamlength > maxtime)
-    {
-        if (maxtime < 2)
-        {
-            return;
-        }
-        if ((maxtime - camtime) >= 1)
-        {
-            postdelay = maxtime - camtime;
-        }
-        else
-        {
-            postdelay = 1;
-            camtime = maxtime - 1;
-        }
-        killcamlength = camtime + postdelay;
-    }
-    killcamoffset = camtime + predelay;
-    killcamstarttime = getTime() - (killcamoffset * 1000);
-    self notify("begin_killcam", getTime());
-    self.sessionstate = "spectator";
-    self.spectatorclient = attackernum;
-    self.killcamentity = -1;
-    if (killcamentityindex >= 0)
-    {
-        self thread setkillcamentity(killcamentityindex, killcamentitystarttime - killcamstarttime - 100);
-    }
-    self.killcamtargetentity = targetnum;
-    self.archivetime = killcamoffset;
-    self.killcamlength = killcamlength;
-    self.psoffsettime = offsettime;
-    //self overlay(true, attacker, false);
-    recordkillcamsettings(attackernum, targetnum, sweapon, deathtime, deathtimeoffset, offsettime, killcamentityindex, killcamentitystarttime, perks, attacker);
-    foreach(team in level.teams)
-    {
-        self allowspectateteam(team, 1);
-    }
-    self allowspectateteam("freelook", 1);
-    self allowspectateteam("none", 1);
-    self thread endedkillcamcleanup();
-    wait 0.05;
-    if (self.archivetime <= predelay)
-    {
-        self.sessionstate = "dead";
-        self.spectatorclient = -1;
-        self.killcamentity = -1;
-        if (is_false(level.skipGameEnd))
-            self.archivetime = 0;
-        self.psoffsettime = 0;
-        self notify("end_killcam");
-        self overlay(false);
-        return;
-    }
-    self thread checkforabruptkillcamend();
-    self.killcam = 1;
-    //self addkillcamskiptext(respawn);
-    if (!self issplitscreen() && level.perksenabled == 1)
-    {
-        self maps\mp\gametypes_zm\_hud_util::showperks();
-    }
-    self thread spawnedkillcamcleanup();
-    //self thread waitskipkillcambutton();
-    self thread waitteamchangeendkillcam();
-    self thread waitkillcamtime();
-    self setclientuivisibilityflag("hud_visible", 0);
-    self overlay(false);
-    self waittill("end_killcam");
-    self endkillcam(0);
-    self setclientuivisibilityflag("hud_visible", 1);
-    self.sessionstate = "dead";
-    //self.sessionstate = "spectator"; ??
-    self.spectatorclient = -1;
-    self.killcamentity = -1;
-    if (is_false(level.skipGameEnd))
-        self.archivetime = 0;
-    self.psoffsettime = 0;
-}
-
-setkillcamentity(killcamentityindex, delayms)
+set_killcam_entity(killcamentityindex, delayms)
 {
     self endon("disconnect");
     self endon("end_killcam");
@@ -375,7 +292,7 @@ endedkillcamcleanup()
     self endkillcam(0);
 }
 
-endedfinalkillcamcleanup()
+ended_final_killcam_cleanup()
 {
     self endon("end_killcam");
     self endon("disconnect");
@@ -450,7 +367,7 @@ cancelkillcamonuse_specificbutton(pressingbuttonfunc, finishedfunc)
     }
 }
 
-finalkillcam(winner)
+final_killcam(winner)
 {
     self endon("disconnect");
     level endon("game_ended");
@@ -462,7 +379,7 @@ finalkillcam(winner)
     killcamsettings = level.finalkillcamsettings[winner];
     postdeathdelay = (getTime() - killcamsettings.deathtime) / 1000;
     predelay = postdeathdelay + killcamsettings.deathtimeoffset;
-    camtime = attacker calckillcamtime(killcamsettings.weapon, killcamsettings.entitystarttime, predelay, 0, undefined);
+    camtime = attacker calc_time(killcamsettings.weapon, killcamsettings.entitystarttime, predelay, 0, undefined);
     postdelay = 2.5;
     killcamoffset = camtime + predelay;
     killcamlength = (camtime + postdelay) - 0.05;
@@ -473,12 +390,13 @@ finalkillcam(winner)
     self.killcamentity = -1;
 
     if (killcamsettings.entityindex >= 0)
-        self thread setkillcamentity(killcamsettings.entityindex, killcamsettings.entitystarttime - killcamstarttime - 100);
+        self thread set_killcam_entity(killcamsettings.entityindex, killcamsettings.entitystarttime - killcamstarttime - 100);
 
     self.killcamtargetentity = killcamsettings.targetentityindex;
     self.archivetime = killcamoffset;
     self.killcamlength = killcamlength;
     self.psoffsettime = killcamsettings.offsettime;
+
     self overlay(true, attacker, true); // killcam overlay
 
     foreach(team in level.teams)
@@ -487,23 +405,29 @@ finalkillcam(winner)
     }
     self allowspectateteam("freelook", 1);
     self allowspectateteam("none", 1);
-    self thread endedfinalkillcamcleanup();
+
+    self thread ended_final_killcam_cleanup();
+
+    // wait till the next server frame to allow code a chance to update archivetime if it needs trimming
     wait 0.05;
-    if (self.archivetime <= predelay)
+
+    if (self.archivetime <= predelay) // if we're not looking back in time far enough to even see the death, cancel
     {
         self.sessionstate = "dead";
         self.spectatorclient = -1;
         self.killcamentity = -1;
-        if (is_false(level.skipGameEnd))
+        if (is_false(level.skip_game_end))
             self.archivetime = 0;
         self.psoffsettime = 0;
-        self notify("end_killcam");
         self overlay(false);
+        self notify("end_killcam");
         return;
     }
 
     self thread checkforabruptkillcamend();
+
     self.killcam = 1;
+
     self thread waitkillcamtime();
     self thread waitfinalkillcamslowdown(level.finalkillcamsettings[winner].deathtime, killcamstarttime);
 
@@ -514,24 +438,7 @@ finalkillcam(winner)
     setmatchflag("round_end_killcam", 0);
 }
 
-iskillcamgrenadeweapon(sweapon)
-{
-    switch (sweapon)
-    {
-    case "frag_grenade_mp":
-        return true;
-    case "frag_grenade_short_mp":
-        return true;
-    case "sticky_grenade_mp":
-        return true;
-    case "tabun_gas_mp":
-        return true;
-    default:
-        return false;
-    }
-}
-
-calckillcamtime(sweapon, entitystarttime, predelay, respawn, maxtime)
+calc_time(sweapon, entitystarttime, predelay, respawn, maxtime)
 {
     camtime = self.killcam_length;
     if (isdefined(maxtime))
@@ -587,7 +494,7 @@ overlay(on, attacker, final)
         self.hud[2] = self shader("CENTER", "CENTER", 0, 180, "emblem_bg_default", 160, 40, (1, 1, 1), 0.9, 2); //calling card
         self.hud[3] = self shader("CENTER", "CENTER", 5, 188, attacker.killcam_rank, 16, 16, (1, 1, 1), 1, 3); //player rank
         self.hud[4] = self drawtext2(name, "LEFT", "CENTER", -44, 171, 1.20, "default", (1,1,1), 1, 3); //player name
-        self.hud[5] = self drawtext2(checkKillcamType(final), "CENTER", "CENTER", 0, -180, 3.25, "default", (1,1,1), 0.9, 3); //top text
+        self.hud[5] = self drawtext2(killcam_type(final), "CENTER", "CENTER", 0, -180, 3.25, "default", (1,1,1), 0.9, 3); //top text
         for(i = 0; i < self.hud.size; i++)
         {
             self.hud[i].foreground = true;
@@ -605,12 +512,12 @@ overlay(on, attacker, final)
     }
 }
 
-checkKillcamType(final)
+killcam_type(final)
 {
     if (level.round_based)
         return "ROUND ENDING KILLCAM";
-    else
-        return "FINAL KILLCAM";
+
+    return "FINAL KILLCAM";
 }
 
 changerank(index, custom)

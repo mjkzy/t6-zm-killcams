@@ -39,44 +39,39 @@ init()
     level.perk_purchase_limit = 20;
     level.zombie_vars["zombie_use_failsafe"] = false;
     set_zombie_var("zombie_use_failsafe", 0);
-    level.player_out_of_playable_area_monitor = false;
-    level.player_too_many_weapons_monitor = false;
-
-    level.actor_killed_stub = level.callbackactorkilled;
-    level.callbackactorkilled = ::actor_killed;
+    level.player_out_of_playable_area_monitor = undefined;
+    level.player_too_many_weapons_monitor = undefined;
     level._zombies_round_spawn_failsafe = undefined;
-    level.onTeamOutcomeNotify = ::teamOutcomeNotify;
 
-    level.spawnplayer_stub = level.spawnplayer;
-    level.spawnplayer = ::spawnplayer_hook;
+    level.callbackactorkilled_og = level.callbackactorkilled;
+    level.callbackactorkilled = ::callbackactorkilled_stub;
+    level.onteamoutcomenotify = ::outcome_notify_stub;
+
+    level.spawnplayer_og = level.spawnplayer;
+    level.spawnplayer = ::spawnplayer_stub;
 
     // vars
     level.enemy_score = randomintrange(0, 4); // default is random
     level.round_based = false;                // victory by default
-    level.infinalkillcam = 0;
 
     maps\mp\zombies\_zm_spawner::register_zombie_damage_callback(::do_hitmarker);
     maps\mp\zombies\_zm_spawner::register_zombie_death_event_callback(::do_hitmarker_death);
 
-    level thread init_killfeed();
-    level thread onplayerconnect();
-    level thread endgamewhenhit();
+    level thread on_player_connect();
+    level thread end_game_when_hit();
     level thread open_seseme();
-    level thread drawZombiesCounter();
-    level thread monitorlastcooldown();
+    level thread zombies_counter();
+    level thread last_cooldown();
 
     // lil changes
     level thread set_pap_price();
-    level thread buildbuildables();
-    level thread buildcraftables();
+    level thread build_buildables();
+    level thread build_craftables();
 
     level.debug_mode = getdvarintdefault("debug_mode", 0);
     level.result = 0;
 
-    level.zombie_vars["zombie_use_failsafe"] = 0;
-
-    level thread initfinalkillcam();
-    level thread doFinalKillcam();
+    level thread init_killcam();
 }
 
 set_pap_price()
@@ -93,7 +88,7 @@ set_pap_price()
     pap_trigger sethintstring(&"ZOMBIE_PERK_PACKAPUNCH", pap_trigger.cost); // reset hint msg to new price
 }
 
-onPlayerConnect()
+on_player_connect()
 {
     for(;;)
     {
@@ -181,11 +176,11 @@ onPlayerSpawned()
     }
 }
 
-spawnplayer_hook()
+spawnplayer_stub()
 {
-    if (is_false(level.infinalkillcam))
+    if (is_false(level.in_final_killcam))
     {
-        thread [[level.spawnplayer_stub]]();
+        thread [[level.spawnplayer_og]]();
         return;
     }
 }
