@@ -408,6 +408,9 @@ outcome_notify_stub(winner, isround, endreasontext)
     outcometext setpulsefx(100, duration, 1000);
     iconspacing = 100;
     currentx = ((1 * -1) * iconspacing) / 2;
+
+    printf("--------------");
+    printf("currentx = " + currentx);
     teamicons = [];
     teamicons[team] = createicon(determineTeamLogo(), iconsize, iconsize);
     teamicons[team] setparent(outcometext);
@@ -419,7 +422,11 @@ outcome_notify_stub(winner, isround, endreasontext)
     teamicons[team].immunetodemofreecamera = 1;
     teamicons[team] fadeovertime(0.5);
     teamicons[team].alpha = 1;
+    printf("new teamicons created for team \"" + team + "\"");
+
     currentx += iconspacing;
+    printf("currentx = " + currentx);
+
     foreach(enemyteam in level.teams)
     {
         if (enemyteam != team)
@@ -433,7 +440,10 @@ outcome_notify_stub(winner, isround, endreasontext)
             teamicons[enemyteam].immunetodemofreecamera = 1;
             teamicons[enemyteam] fadeovertime(0.5);
             teamicons[enemyteam].alpha = 1;
+            printf("new teamicons created for enemy team \"" + enemyteam + "\"");
+            
             currentx += iconspacing;
+            printf("currentx = " + currentx);
         }
     }
     teamscores = [];
