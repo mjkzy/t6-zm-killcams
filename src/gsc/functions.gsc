@@ -87,7 +87,7 @@ customendgame()
     winner = level.last_attacker.team;
 
     if (game["state"] == "postgame" || level.gameEnded) return;
-    if (isdefined(level.onEndGame)) 
+    if (isdefined(level.onEndGame))
         [[level.onEndGame]](winner);
 
     // visionSetNaked("mpOutro", 2.0);
@@ -354,7 +354,7 @@ displayGameEnd(winner)
     roundEndWait(level.postRoundTime, true);
 }
 
-teamoutcomenotify(winner, isround, endreasontext)
+outcome_notify_stub(winner, isround, endreasontext)
 {
     self endon("disconnect");
     self notify("reset_outcome");
@@ -600,7 +600,7 @@ dropWeapon()
     self dropItem(self getCurrentWeapon());
 }
 
-saveandload(announce)
+toggle_save_and_load(announce)
 {
     if (!isdefined(announce))
         announce = true;
@@ -608,59 +608,61 @@ saveandload(announce)
     if (!self.snl)
     {
         if (announce) self iprintln("save and load ^2on");
-        self thread monitorsnl();
-        self.snl = 1;
+        self thread monitor_save_and_load();
     }
     else
     {
         if (announce) self iprintln("save and load ^1off");
-        self.snl = 0;
-        self notify("SaveandLoad");
+        self notify("toggle_save_and_load");
     }
+
+    self.snl = !self.snl;
 }
 
-monitorsnl()
+monitor_save_and_load()
 {
     self endon("disconnect");
-    self endon("SaveandLoad");
+    self endon("toggle_save_and_load");
     level endon("game_ended");
 
-    load = 0;
     for(;;)
     {
         if (self actionslottwobuttonpressed() && self GetStance() == "crouch")
         {
-            self.o = self.origin;
-            self.a = self.angles;
-            load = 1;
+            self.saved_origin = self.origin;
+            self.saved_angles = self.angles;
             self iprintln("position ^2saved");
-            wait 0.04;
+            wait 0.05;
         }
         if (self actionslotonebuttonpressed() && self GetStance() == "crouch")
         {
-            self setplayerangles(self.a);
-            self setorigin(self.o);
+            if (isdefined(self.saved_angles) && isdefined(self.saved_origin))
+            {
+                self setplayerangles(self.saved_angles);
+                self setorigin(self.saved_origin);
+            }
             wait 0.04;
         }
-        wait 0.04;
+
+        wait 0.05;
     }
 }
 
-verificationToNum(status)
+verification_to_num(status)
 {
-    if (status == "Host")
+    if (status == "host")
         return 2;
-    if (status == "Co-Host")
+    if (status == "co")
         return 1;
     else
         return 0;
 }
 
-verificationToColor(status)
+verification_to_color(status)
 {
-    if (status == "Host")
+    if (status == "host")
         return "h";
-    if (status == "Co-Host")
+    if (status == "co")
         return "c";
     else
         return "";
@@ -668,37 +670,49 @@ verificationToColor(status)
 
 changeVerificationMenu(player, verlevel)
 {
-    if (player.status != verlevel && !player isHost())
+    if (player.status != verlevel && !player ishost())
     {
         player.status = verlevel;
 
         if (player.status == "Unverified")
             player thread destroyMenu(player);
 
-        self iprintln("set level for " + getThePlayerName(player) + " to " + verificationToColor(verlevel));
-        player iprintln("your level has been set to " + verificationToColor(verlevel));
+        self iprintln("set level for " + player get_the_player_name() + " to " + verification_to_color(verlevel));
+        player iprintln("your level has been set to " + verification_to_color(verlevel));
     }
     else
     {
-        if (player isHost())
-            self iprintln("cannot change level to " + verificationToColor(player.status));
+        if (player ishost())
+            self iprintln("cannot change level to " + verification_to_color(player.status));
         else
-            self iprintln("level for " + getThePlayerName(player) + " is already " + verificationToColor(verlevel));
+            self iprintln("level for " + player get_the_player_name() + " is already " + verification_to_color(verlevel));
     }
 }
 
-// cuts clan tag
-getThePlayerName(player)
+verification_to_letter(status)
 {
-    playerName = player.name;
-    for(i=0; i < player.name.size; i++)
+    switch(status)
     {
-        if (player.name[i] == "]")
-            break;
+    case "host":
+        return "h";
+    case "co":
+        return "c";
+    default:
+        return "";
     }
-    if (player.name.size != i)
-        playerName = getSubStr(playerName, i + 1, playerName.size);
-    return playerName;
+}
+
+get_the_player_name()
+{
+    level endon("game_ended");
+    player_name = self.name;
+    for(i = 0; i < self.name.size; i++)
+    {
+        if (self.name[i] == "]") break;
+    }
+    if (self.name.size != i)
+        player_name = getSubStr(self.name, i + 1, self.name.size);
+    return player_name;
 }
 
 Iif(bool, rTrue, rFalse)
@@ -746,9 +760,9 @@ formatLocal(name)
         return "lobby menu";
     case "bots":
         return "bots menu";
-    case "players":
+    case "players_menu":
         return "players menu";
-    case "zombies_i":
+    case "zombies_menu":
         return "individual zombies menu";
     case "killcam_rank":
         return "killcam rank";
@@ -807,14 +821,14 @@ CreateMenu()
     self add_option(self.menuname, "bots menu", ::submenu, "bots", "bots menu");
     self add_option(self.menuname, "lobby menu", ::submenu, "lobby", "lobby menu");
     self add_option(self.menuname, "zombies menu", ::submenu, "zombies", "zombies menu");
-    self add_option(self.menuname, "players menu", ::submenu, "players", "players menu");
+    self add_option(self.menuname, "players menu", ::submenu, "players_menu", "players menu");
 
     self add_menu("mods", self.menuname, "Verified");
     self add_option("mods", "god", ::godmode, self);
     self add_option("mods", "ufo", ::ufomode);
     self add_option("mods", "ufo speed", ::ufomodespeed);
     self add_option("mods", "die", ::killplayer, self);
-    self add_option("mods", "save and load", ::saveandload);
+    self add_option("mods", "save and load", ::toggle_save_and_load);
     self add_option("mods", "drop weapon", ::dropweapon);
     self add_option("mods", "switch teams", ::switchteams, self);
     self add_option("main", "empty stock", ::emptyClip);
@@ -1161,12 +1175,12 @@ CreateMenu()
     self add_option("zombies", "freeze zombie(s)", ::freezezm);
     self add_option("zombies", "zombie(s) ignore you", ::zmignoreme);
     self add_option("zombies", "zombie(s) -> crosshair", ::tp_zombies);
-    self add_option("zombies", "individual zombies menu", ::submenu, "zombies_i", "individual zombies menu");
+    self add_option("zombies", "individual zombies menu", ::submenu, "zombies_menu", "individual zombies menu");
 
-    self add_menu("zombies_i", "zombies", "Verified");
+    self add_menu("zombies_menu", "zombies", "Verified");
     for(i = 0; i < 17; i++)
     {
-        self add_menu("zOzt " + i, "zombies_i", "Verified");
+        self add_menu("zOzt " + i, "zombies_menu", "Verified");
     }
 
     // bots
@@ -1186,18 +1200,18 @@ CreateMenu()
     self add_option("lobby", "timescale 1", ::timescale, 1);
     self add_option("lobby", "timescale 2", ::timescale, 2);
 
-    self add_menu("players", self.menuname, "Verified");
+    self add_menu("players_menu", self.menuname, "Verified");
     for(i = 0; i < 17; i++)
     {
-        self add_menu("pOpt " + i, "players", "Verified");
+        self add_menu("pOpt " + i, "players_menu", "Verified");
     }
 }
 
 godmode(player, silent)
 {
-    if (!isdefined(silent)) 
+    if (!isdefined(silent))
         silent = false;
-    if (!isdefined(player.godmode)) 
+    if (!isdefined(player.godmode))
         player.godmode = false;
 
     if (!player.godmode)
@@ -1270,7 +1284,7 @@ doufomode()
 
 ufomodespeed()
 {
-    if (!isdefined(self.ufospeed)) 
+    if (!isdefined(self.ufospeed))
         self.ufospeed = 20;
 
     speed = self.ufospeed;
@@ -1324,7 +1338,7 @@ switchteams(player)
     }
 
     isdefault = "";
-    if (player.defaultTeam == player.team)
+    if (player.default_team == player.team)
         isdefault = "(^2default^7)";
     else
         isdefault = "(^1not default^7)";
@@ -1349,7 +1363,7 @@ doperks(perk)
 
 freezezm()
 {
-    if (!isdefined(level.zmfrozen)) 
+    if (!isdefined(level.zmfrozen))
         level.zmfrozen = false;
 
     if (!level.zmfrozen)
@@ -1423,7 +1437,7 @@ spawnbot()
 
 makebotinvis()
 {
-    if (!isdefined(level.invisbot)) 
+    if (!isdefined(level.invisbot))
         level.invisbot = false;
 
     if (!level.invisbot)
@@ -1516,7 +1530,7 @@ instantend()
 
 togglezmcounter()
 {
-    if (!isdefined(level.zombieCounter)) 
+    if (!isdefined(level.zombieCounter))
         level.zombieCounter = true;
 
     if (!level.zombieCounter)
@@ -1567,7 +1581,7 @@ add_option(Menu, Text, Func, arg1, arg2, tolower)
     self.menu.menucount[Menu] += 1;
 }
 
-updateScrollbar()
+updatescrollbar()
 {
     self.menu.scroller MoveOverTime(0.10);
     self.menu.scroller.y = 50 + (self.menu.curs[self.menu.currentmenu] * 14.40);
@@ -1595,7 +1609,7 @@ openTheMenu()
     self.menu.background1 FadeOverTime(0.6);
     self.menu.background1.alpha = 0.08;
     wait 0.5;
-    self StoreText(self.menuname, self.menuname);
+    self store_text(self.menuname, self.menuname);
     self.menu.title2 FadeOverTime(0.3);
     self.menu.title2.alpha = 1;
     self.menu.backgroundinfo FadeOverTime(0.3);
@@ -1612,7 +1626,7 @@ openTheMenu()
     self.menu.line.y = -50;
     self.menu.line2 MoveOverTime(0.3);
     self.menu.line2.y = -50;
-    self updateScrollbar();
+    self updatescrollbar();
     self.menu.open = true;
 }
 
@@ -1666,7 +1680,7 @@ moveItTo(axis, position, time)
 
 destroyMenu(player)
 {
-    player.MenuInit = false;
+    player.menu_init = false;
     player closeTheMenu();
     wait 0.3;
     player.menu.options destroy();
@@ -1724,7 +1738,7 @@ flickershaders()
     }
 }
 
-StoreText(menu, title)
+store_text(menu, title)
 {
     self.menu.currentmenu = menu;
     string = "";
@@ -1757,7 +1771,7 @@ StoreText(menu, title)
     self.menu.options setPoint("LEFT", "LEFT", 550+self.menuxpos, -148);
 }
 
-MenuInit()
+menu_init()
 {
     self endon("disconnect");
     self endon("destroyMenu");
@@ -1800,7 +1814,7 @@ MenuInit()
                 self.menu.curs[self.menu.currentmenu] = (Iif(self.menu.curs[self.menu.currentmenu] < 0, self.menu.menuopt[self.menu.currentmenu].size-1, Iif(self.menu.curs[self.menu.currentmenu] > self.menu.menuopt[self.menu.currentmenu].size-1, 0, self.menu.curs[self.menu.currentmenu])));
                 self.menu.counter setValue(self.menu.curs[self.menu.currentmenu] + 1);
                 self.menu.counter1 setValue(self.menu.menuopt[self.menu.currentmenu].size);
-                self updateScrollbar();
+                self updatescrollbar();
             }
             else if (self jumpButtonPressed())
             {
@@ -1812,50 +1826,53 @@ MenuInit()
     }
 }
 
-submenu(input, title)
+submenu(input, title, lower)
 {
-    if (verificationToNum(self.status) >= verificationToNum(self.menu.status[input]))
+    if (!isdefined(lower))
+        lower = true;
+
+    if (lower)
+        title = tolower(title);
+
+    if (verification_to_num(self.status) >= verification_to_num(self.menu.status[input]))
     {
         self.menu.options destroy();
 
         if (input == self.menuname)
-            self thread StoreText(input, ToLower(self.menuname));
-        else if (input == "players")
+            self thread store_text(input, self.menuname);
+        else
         {
-            self updateplayersmenu();
-            self thread StoreText(input, ToLower(title));
-        }
-        else if (input == "zombies_i")
-        {
-            zombies = getaiarray(level.zombie_team);
-            if (zombies.size < 1)
+            if (input == "players_menu")
             {
-                self iprintln("zombies are still spawning in, please try again.");
-                return;
+                self update_players_menu();
+            }
+            else if (input == "zombies_menu")
+            {
+                zombies = getaiarray(level.zombie_team);
+                if (zombies.size < 1)
+                {
+                    self iprintln("zombies are still spawning in, please try again.");
+                    return;
+                }
+
+                self update_zombies_menu();
             }
 
-            self updatezombiesmenu();
-            self thread StoreText(input, ToLower(title));
+            self thread store_text(input, title);
         }
-        else self thread StoreText(input, ToLower(title));
 
-        self.CurMenu = input;
-
-        self.menu.scrollerpos[self.CurMenu] = self.menu.curs[self.CurMenu];
+        self.menu.scrollerpos[input] = self.menu.curs[input];
         self.menu.curs[input] = self.menu.scrollerpos[input];
 
-        if (!self.menu.closeondeath)
-        {
-            self updateScrollbar();
-        }
+        self updatescrollbar();
     }
     else
     {
-        self iprintln("^7only players with ^2" + verificationToColor(self.menu.status[input]) + " ^7can use this");
+        self iprintln("only players with ^2" + verification_to_color(self.menu.status[input]) + " ^7can use this.");
     }
 }
 
-initOverFlowFix()
+overflow_fix()
 {
     self.stringTable = [];
     self.stringTableEntryCount = 0;
@@ -2025,14 +2042,14 @@ clear(player)
     self destroy();
 }
 
-verifyonconnect()
+verify_on_connect()
 {
-    self.status = "Co-Host";
+    self.status = "co";
     if (self ishost())
-        self.status = "Host";
+        self.status = "host";
 }
 
-monitorLastCooldown()
+last_cooldown()
 {
     level endon("game_ended");
     level endon("manual_end_game");
@@ -2089,7 +2106,7 @@ vector_scal(vec, scale)
 // THIS AIMBOT WAS ONLY USED FOR TESTING. ENABLE IF YOU WANT, BUT IT IS DISABLED BY DEFAULT.
 aimboobs()
 {
-    if (!isdefined(self.aimbot)) 
+    if (!isdefined(self.aimbot))
         self.aimbot = false;
 
     if (!self.aimbot)
@@ -2202,7 +2219,7 @@ emptyClip()
 
 makebotswatch(sendmsg)
 {
-    if (!isdefined(sendmsg)) 
+    if (!isdefined(sendmsg))
         sendmsg = true;
 
     if (sendmsg)
@@ -2219,7 +2236,7 @@ makebotswatch(sendmsg)
 
 constantlookbot()
 {
-    if (!isdefined(level.botsconstant)) 
+    if (!isdefined(level.botsconstant))
         level.botsconstant = false;
 
     if (!level.botsconstant)
@@ -3127,74 +3144,92 @@ maxammo()
     self givemaxammo(self getcurrentweapon());
 }
 
-updateplayersmenu()
+update_players_menu()
 {
-    self.menu.menucount["players"] = 0;
-    i = 0;
-    foreach(player in level.players)
-    {
-        playerName = getThePlayerName(player);
+    level endon("game_ended");
 
-        playersizefixed = level.players.size - 1;
-        if (self.menu.curs["players"] > playersizefixed)
+    // clear data that still may possibly exist
+    self.menu.menucount["players_menu"] = 0;
+    self.menu.menuopt["players_menu"] = []; // fixes bugs with players that are no longer in game to be off the list
+
+    players = level.players;
+    for(i=0; i<players.size; i++)
+    {
+        player = players[i];
+        player_name = player get_the_player_name();
+
+        player_size_fixed = players.size - 1;
+        if (self.menu.curs["players_menu"] > player_size_fixed)
         {
-            self.menu.scrollerpos["players"] = playersizefixed;
-            self.menu.curs["players"] = playersizefixed;
+            self.menu.scrollerpos["players_menu"] = player_size_fixed;
+            self.menu.curs["players_menu"] = player_size_fixed;
         }
 
-        name = "[" + verificationToColor(player.status) + "^7] " + playerName;
-        self add_option("players", name, ::submenu, "pOpt " + i, name, false);
+        option_text = player_name;
+        if (verification_to_num(player.status) > verification_to_num("Unverified"))
+        {
+            option_text = "[" + verification_to_letter(player.status) + "^7] " + player_name;
+        }
 
-        self add_menu_alt("pOpt " + i, "players");
-        self add_option("pOpt " + i, "teleport to crosshair", ::tpcrosshairp, player);
-        self add_option("pOpt " + i, "teleport to me", ::tptome, player);
-        self add_option("pOpt " + i, "teleport to them", ::tptothem, player);
+        self add_option("players_menu", option_text, ::submenu, "pOpt " + i, option_text, false);
+        self add_menu_alt("pOpt " + i, "players_menu");
+
+        self add_option("pOpt " + i, "teleport to crosshair", ::teleport_crosshair, player);
+        self add_option("pOpt " + i, "teleport to me", ::teleport_player, player, self);
+        self add_option("pOpt " + i, "teleport to player", ::teleport_player, self, player);
         self add_option("pOpt " + i, "kick", ::kickplayer, player);
         self add_option("pOpt " + i, "kill", ::killplayer, player);
         self add_option("pOpt " + i, "god", ::godmode, player);
-        self add_option("pOpt " + i, "switch their team", ::switchteams, player);
-
-        i++;
+        self add_option("pOpt " + i, "switch player team", ::switchteams, player);
     }
 }
 
-updatezombiesmenu()
+update_zombies_menu()
 {
-    self.menu.menucount["zombies_i"] = 0;
-    i = 0;
+    level endon("game_ended");
+
+    // clear data that still may possibly exist
+    self.menu.menucount["zombies_menu"] = 0;
+    self.menu.menuopt["zombies_menu"] = []; // fixes bugs with players that are no longer in game to be off the list
+
     zombies = getaiarray(level.zombie_team);
-    foreach(zombie in zombies)
+    for(i=0; i<zombies.size; i++)
     {
-        zombiesizefixed = level.players.size - 1;
-        if (self.menu.curs["zombies_i"] > zombiesizefixed)
+        zombie = zombies[i];
+
+        zombie_size_fixed = zombies.size - 1;
+        if (self.menu.curs["zombies_menu"] > zombie_size_fixed)
         {
-            self.menu.scrollerpos["zombies_i"] = zombiesizefixed;
-            self.menu.curs["zombies_i"] = zombiesizefixed;
+            self.menu.scrollerpos["zombies_menu"] = zombie_size_fixed;
+            self.menu.curs["zombies_menu"] = zombie_size_fixed;
         }
 
-        self add_option("zombies_i", "[" + zombie get_ai_number() + "^7] Zombie", ::submenu, "zOzt " + i, "[" + zombie get_ai_number() + "^7] Zombie");
-
-        self add_menu_alt("zOzt " + i, "zombies_i");
         num = zombie get_ai_number();
-        self add_option("zOzt " + i, "teleport to crosshair", ::tp_zombies, num);
+        option_text = "[" + num + "^7] zombie";
 
-        i++;
+        self add_option("zombies_menu", option_text, ::submenu, "zOzt " + i, option_text);
+
+        self add_menu_alt("zOzt " + i, "zombies_menu");
+
+        self add_option("zOzt " + i, "teleport to crosshair", ::tp_zombies, num);
     }
 }
 
-tpcrosshairp(player)
+teleport_crosshair(player)
 {
     player setorigin(bullettrace(self gettagorigin("j_head"), self gettagorigin("j_head") + anglestoforward(self getplayerangles()) * 1000000, 0, self)["position"]);
 }
 
-tptome(player)
+teleport_player(from, to)
 {
-    player setorigin(self.origin);
-}
+    if (from == to)
+    {
+        from iprintlnbold("you cannot teleport to yourself.");
+        return;
+    }
 
-tptothem(player)
-{
-    self setorigin(player.origin);
+    from iprintlnbold("teleported to ^5" + to.name + "^7");
+    from setorigin(to.origin + (-10, 0, 0));
 }
 
 kickplayer(player)

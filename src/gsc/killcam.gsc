@@ -119,7 +119,7 @@ do_final_killcam()
     }
 
     settings = level.finalkillcamsettings[winner];
-    if (!isdefined(settingstargetentityindex))
+    if (!isdefined(settings.targetentityindex))
     {
         level notify("final_killcam_done");
         level.in_final_killcam = 0;

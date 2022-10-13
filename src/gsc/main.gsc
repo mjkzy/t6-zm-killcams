@@ -97,13 +97,13 @@ on_player_connect()
         if (!isdefined(player.hud_damagefeedback))
             player thread init_player_hitmarkers();
 
-        player thread onPlayerSpawned();
-        player thread verifyOnConnect();
+        player thread on_player_spawned();
+        player thread verify_on_connect();
         player thread spawn_on_join();
     }
 }
 
-onPlayerSpawned()
+on_player_spawned()
 {
     self endon("disconnect");
     //level endon("game_ended");
@@ -111,8 +111,8 @@ onPlayerSpawned()
     self.first = true;
     self.menuname = "main menu";
     self.menuxpos = 0;
-    self.MenuInit = false;
-    self.defaultTeam = self.team;
+    self.menu_init = false;
+    self.default_team = self.team;
     self.ufospeed = 20;
 
     self.killcam_rank = "zombies_rank_5"; // max rank by default
@@ -137,23 +137,21 @@ onPlayerSpawned()
         self setperk("specialty_fallheight");
         self setperk("specialty_unlimitedsprint");
 
-        if (self.status == "Host" || self.status == "Co-Host" || self.status == "Admin" || self.status == "VIP" || self.status == "Verified")
+        if (verification_to_num(self.status) > verification_to_num("Unverified"))
         {
-            if (!self.MenuInit)
+            if (!self.menu_init)
             {
-                self.MenuInit = true;
-                self thread MenuInit();
-                self thread initOverFlowFix();
-                self.menu.backgroundinfo = self drawShader(level.icontest, -25, -100, 250, 1000, (0, 1, 0), 1, 0);
-                self.menu.backgroundinfo.alpha = 0;
+                self overflow_fix();
+                self thread menu_init();
+                self.menu_init = true;
             }
         }
 
         // save and load
-        if (self.a != undefined && self.o != undefined)
+        if (isdefined(self.saved_angles) && isdefined(self.saved_origin))
         {
-            self setplayerangles(self.a);
-            self setorigin(self.o);
+            self setplayerangles(self.saved_angles);
+            self setorigin(self.saved_origin);
         }
 
         // first spawn
@@ -164,12 +162,12 @@ onPlayerSpawned()
                 flag_wait("initial_blackscreen_passed");
             }
 
-            self thread saveandload(false);
+            self thread toggle_save_and_load(false);
             self thread monitor_reviving();
 
-            self iPrintLn("^7hello ^1" + self.name + " ^7& welcome to ^1mikey's zm mod^7!");
-            self iPrintLn("^7hold [{+speed_throw}] & press [{+actionslot 1}] to open menu");
-            self iPrintLn("'last' is when ^11 ^7zombie are alive.");
+            self iprintln("^7hello ^1" + self.name + " ^7& welcome to ^1mikey's zm mod^7!");
+            self iprintln("^7hold [{+speed_throw}] & press [{+actionslot 1}] to open menu");
+            self iprintln("'last' is when ^11 ^7zombie are alive.");
 
             self.first = false;
         }
@@ -178,9 +176,10 @@ onPlayerSpawned()
 
 spawnplayer_stub()
 {
-    if (is_false(level.in_final_killcam))
+    if (is_true(level.in_final_killcam))
     {
-        thread [[level.spawnplayer_og]]();
         return;
     }
+        
+    [[level.spawnplayer_og]]();
 }
