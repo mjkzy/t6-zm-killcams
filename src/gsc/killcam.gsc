@@ -19,11 +19,8 @@ init_killcam()
     level thread do_final_killcam();
 }
 
-callbackactorkilled_stub(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime)
+record_killcam_settings_and_stuff(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime)
 {
-    // call original
-    thread [[level.callbackactorkilled_og]](einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime);
-
     if (self == attacker)
         return;
     if (!isplayer(attacker))
@@ -50,18 +47,32 @@ callbackactorkilled_stub(einflictor, attacker, idamage, smeansofdeath, sweapon, 
             killcamentitystarttime = 0;
     }
 
-    lpattacknum = attacker getentitynumber();
     deathtimeoffset = 0;
-    self.deathtime = getTime();
-    willrespawnimmediately = 0;
+    self.deathtime = gettime();
 
-    perks = [];
-
+    // if this is not defined, everything will kinda die. oopsie :P
     level.last_attacker = attacker;
-    level thread record_killcam_settings(lpattacknum, self getentitynumber(), sweapon, self.deathtime, deathtimeoffset, psoffsettime, killcamentityindex, killcamentitystarttime, perks, attacker);
+
+    level thread record_killcam_settings(attacker getentitynumber(), self getentitynumber(), sweapon, self.deathtime, deathtimeoffset, psoffsettime, killcamentityindex, killcamentitystarttime, attacker);
 }
 
-record_killcam_settings(spectatorclient, targetentityindex, sweapon, deathtime, deathtimeoffset, offsettime, entityindex, entitystarttime, perks, attacker)
+callbackactorkilled_stub(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime)
+{
+    // call original
+    thread [[level.callbackactorkilled_og]](einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime);
+
+    self thread record_killcam_settings_and_stuff(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime);
+}
+
+callbackplayerkilled_stub(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime, deathanimduration)
+{
+    // call original
+    thread [[level.callbackplayerkilled_og]](einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime, deathanimduration);
+
+    self thread record_killcam_settings_and_stuff(einflictor, attacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime);
+}
+
+record_killcam_settings(spectatorclient, targetentityindex, sweapon, deathtime, deathtimeoffset, offsettime, entityindex, entitystarttime, attacker)
 {
     if (level.teambased && isdefined(attacker.team) && isdefined(level.teams[attacker.team]))
     {
@@ -74,7 +85,6 @@ record_killcam_settings(spectatorclient, targetentityindex, sweapon, deathtime, 
         level.finalkillcamsettings[team].entityindex = entityindex;
         level.finalkillcamsettings[team].targetentityindex = targetentityindex;
         level.finalkillcamsettings[team].entitystarttime = entitystarttime;
-        level.finalkillcamsettings[team].perks = perks;
         level.finalkillcamsettings[team].attacker = attacker;
     }
     level.finalkillcamsettings["none"].spectatorclient = spectatorclient;
@@ -85,7 +95,6 @@ record_killcam_settings(spectatorclient, targetentityindex, sweapon, deathtime, 
     level.finalkillcamsettings["none"].entityindex = entityindex;
     level.finalkillcamsettings["none"].targetentityindex = targetentityindex;
     level.finalkillcamsettings["none"].entitystarttime = entitystarttime;
-    level.finalkillcamsettings["none"].perks = perks;
     level.finalkillcamsettings["none"].attacker = attacker;
 }
 
@@ -175,7 +184,6 @@ initfinalkillcamteam(team)
     level.finalkillcamsettings[team].entityindex = undefined;
     level.finalkillcamsettings[team].targetentityindex = undefined;
     level.finalkillcamsettings[team].entitystarttime = undefined;
-    level.finalkillcamsettings[team].perks = undefined;
     level.finalkillcamsettings[team].killstreaks = undefined;
     level.finalkillcamsettings[team].attacker = undefined;
 }

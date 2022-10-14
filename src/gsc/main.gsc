@@ -44,7 +44,11 @@ init()
     level._zombies_round_spawn_failsafe = undefined;
 
     level.callbackactorkilled_og = level.callbackactorkilled;
-    level.callbackactorkilled = ::callbackactorkilled_stub;
+    level.callbackactorkilled = ::callbackactorkilled_stub; 
+
+    level.callbackplayerkilled_og = level.callbackplayerkilled;
+    level.callbackplayerkilled = ::callbackplayerkilled_stub;
+
     level.onteamoutcomenotify = ::outcome_notify_stub;
 
     level.spawnplayer_og = level.spawnplayer;
