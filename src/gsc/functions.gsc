@@ -68,12 +68,12 @@ end_game_when_hit()
     for(;;)
     {
         enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
-        if (enemies < 1 && level.islast)
+        if (enemies < 1 && level.is_last)
         {
-            if (int(getDvar("g_ai")) != 1)
-                setDvar("g_ai", 1);
+            if (int(getdvar("g_ai")) != 1)
+                setdvar("g_ai", 1);
 
-            level thread customendgame();
+            level thread custom_end_game();
 
             break;
         }
@@ -82,7 +82,7 @@ end_game_when_hit()
 }
 
 // MP endgame + parts of end_game from _zm
-customendgame()
+custom_end_game()
 {
     winner = level.last_attacker.team;
 
@@ -1176,6 +1176,7 @@ CreateMenu()
 
     // zombies
     self add_menu("zombies", self.menuname, "Verified");
+    self add_option("zombies", "spawn zombie", ::spawn_zombie);
     self add_option("zombies", "freeze zombie(s)", ::freezezm);
     self add_option("zombies", "zombie(s) ignore you", ::zmignoreme);
     self add_option("zombies", "zombie(s) -> crosshair", ::tp_zombies);
@@ -1196,7 +1197,7 @@ CreateMenu()
     self add_option("bots", "bot(s) constant look @ me", ::constantlookbot);
 
     self add_menu("lobby", self.menuname, "Verified");
-    self add_option("lobby", "end game", ::customendgame_f);
+    self add_option("lobby", "end game", ::custom_end_game_f);
     self add_option("lobby", "zombie counter", ::togglezmcounter);
     self add_option("lobby", "timescale 0.25", ::timescale, 0.25);
     self add_option("lobby", "timescale 0.5", ::timescale, 0.50);
@@ -1522,14 +1523,14 @@ tp_zombies(ai_num)
     }
 }
 
-customendgame_f()
+custom_end_game_f()
 {
-    level thread customendgame();
+    level thread custom_end_game();
 }
 
 instantend()
 {
-    return exitlevel(false);
+    exitlevel(false);
 }
 
 togglezmcounter()
@@ -2058,7 +2059,7 @@ last_cooldown()
     level endon("game_ended");
     level endon("manual_end_game");
 
-    level.islast = false;
+    level.is_last = false;
 
     // inital black screen
     if (!flag("initial_blackscreen_passed"))
@@ -2077,13 +2078,13 @@ last_cooldown()
     for(;;)
     {
         enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
-        if (is_false(level.islast))
+        if (is_false(level.is_last))
         {
             if (enemies > 0 && enemies <= 1)
             {
                 iprintln("you are at ^1last^7!");
 
-                level.islast = true;
+                level.is_last = true;
 
                 zombies = getaiarray(level.zombie_team);
                 foreach(zomb in zombies)
@@ -2092,10 +2093,10 @@ last_cooldown()
                 }
             }
         }
-        if (enemies > 2 && is_true(level.islast))
+        if (enemies > 2 && is_true(level.is_last))
         {
             iprintln("last cooldown ^1reset^7! there is more than ^11^7 zombie");
-            level.islast = false;
+            level.is_last = false;
         }
         wait 0.02;
     }
@@ -2103,8 +2104,7 @@ last_cooldown()
 
 vector_scal(vec, scale)
 {
-    vec = (vec[0] * scale, vec[1] * scale, vec[2] * scale);
-    return vec;
+    return (vec[0] * scale, vec[1] * scale, vec[2] * scale);
 }
 
 // THIS AIMBOT WAS ONLY USED FOR TESTING. ENABLE IF YOU WANT, BUT IT IS DISABLED BY DEFAULT.
@@ -3456,4 +3456,10 @@ keep_tryna_freeze()
     self freezecontrols(true);
     wait 0.05;
     self freezecontrols(true);
+}
+
+spawn_zombie()
+{
+    self iprintln("spawning another zombie");
+    level.zombie_total += 1;
 }
