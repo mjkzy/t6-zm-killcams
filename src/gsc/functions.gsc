@@ -3165,11 +3165,11 @@ monitor_reviving()
 */
 init_afterhit()
 {
-    self.afterhit = [];
+    // after hit weap array
     for(i=0; i<8; i++)
     {
-        self.afterhit[i] = spawnstruct();
-        self.afterhit[i].on = false;
+        self.afterhit[i] = [];
+        self.afterhit[i]["on"] = false;
     }
 
     // get random perk bottle, and one that is being used
@@ -3193,59 +3193,55 @@ init_afterhit()
     if (is_true(level.zombiemode_using_vulture_perk))
         arrayinsert(perks, "specialty_nomotionsensor", perks.size);
 
-    self.afterhit[0].weap = "fivesevendw_zm";
-    self.afterhit[1].weap = "zombie_knuckle_crack";
-    self.afterhit[2].weap = randomintrange(0, perks.size);
-    self.afterhit[3].weap = "chalk_draw_zm";
-    self.afterhit[4].weap = "syrette_zm";
-    self.afterhit[5].weap = "zombie_tomahawk_flourish";
-    self.afterhit[6].weap = "lightning_hands_zm";
-    self.afterhit[7].weap = "zombie_one_inch_punch_flourish";
+    self.afterhit[0]["weapon"] = "fivesevendw_zm";
+    self.afterhit[1]["weapon"] = "zombie_knuckle_crack";
+    self.afterhit[2]["weapon"] = randomintrange(0, perks.size);
+    self.afterhit[3]["weapon"] = "chalk_draw_zm";
+    self.afterhit[4]["weapon"] = "syrette_zm";
+    self.afterhit[5]["weapon"] = "zombie_tomahawk_flourish";
+    self.afterhit[6]["weapon"] = "lightning_hands_zm";
+    self.afterhit[7]["weapon"] = "zombie_one_inch_punch_flourish";
 }
 
-canToggleAfter()
+can_toggle()
 {
     foreach(weapon in self.afterhit)
     {
-        if (weapon.on)
-        {
+        if (weapon["on"])
             return false;
-        }
     }
     return true;
 }
 
-afterhitweapon(weapon)
+afterhitweapon(index)
 {
-    if (weapon.on == false)
+    if (!self.afterhit[index]["on"])
     {
-        if (!canToggleAfter())
+        if (!can_toggle())
         {
-            self iprintln("^7cannot have more than ^1one^7 after hit on.");
+            self iprintln("cannot have more than ^1one^7 after hit on.");
             return;
         }
-        self iprintln("after hit ^2on");
-        self thread pullout_weapon(weapon.weap);
-        weapon.on = true;
+        self iprintln(va("after hit ^2on ^7(%s)", self.afterhit[index]["weapon"]));
+        self thread pullout_weapon(self.afterhit[index]["weapon"]);
     }
-    else if (weapon.on)
+    else if (self.afterhit[index]["on"])
     {
         self iprintln("after hit ^1off");
         self notify("KillAfterHit");
-        weapon.on = false;
     }
+
+    self.afterhit[index]["on"] = !self.afterhit[index]["on"];
 }
 
 pullout_weapon(weapon)
 {
     self endon("disconnect");
     self endon("KillAfterHit");
+
     level waittill("game_ended");
-    self freezecontrols(true);
     self takeweapon(self getcurrentweapon());
-    self giveWeapon(weapon);
-    self switchToWeapon(weapon);
-    self freezecontrols(true);
+    self g_weapon(weapon);
 }
 
 g_timebomb()
