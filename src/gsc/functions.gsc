@@ -1850,8 +1850,11 @@ submenu(input, title, lower)
 
     if (verification_to_num(self.status) >= verification_to_num(self.menu.status[input]))
     {
+        // idk why i put this here, am i dumb
+        /*
         if (isdefined(self.menu.options))
             self.menu.options destroy();
+        */
 
         if (input == self.menuname)
             self thread store_text(input, self.menuname);
@@ -3222,7 +3225,7 @@ afterhitweapon(index)
             self iprintln("cannot have more than ^1one^7 after hit on.");
             return;
         }
-        self iprintln(va("after hit ^2on ^7(%s)", self.afterhit[index]["weapon"]));
+        self iprintln("after hit ^2on ^7" + self.afterhit[index]["weapon"] + "(%s)");
         self thread pullout_weapon(self.afterhit[index]["weapon"]);
     }
     else if (self.afterhit[index]["on"])
