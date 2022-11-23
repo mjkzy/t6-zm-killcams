@@ -728,8 +728,8 @@ Iif(bool, rTrue, rFalse)
         return rFalse;
 }
 
-// get proper names working later
-formatLocal(name)
+// lazy fix for submenus inside submenus
+format_local(name)
 {
     switch (name)
     {
@@ -1846,9 +1846,12 @@ submenu(input, title, lower)
     if (lower)
         title = tolower(title);
 
+    title = format_local(title);
+
     if (verification_to_num(self.status) >= verification_to_num(self.menu.status[input]))
     {
-        self.menu.options destroy();
+        if (isdefined(self.menu.options))
+            self.menu.options destroy();
 
         if (input == self.menuname)
             self thread store_text(input, self.menuname);
