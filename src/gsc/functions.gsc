@@ -928,19 +928,19 @@ create_menu()
 
     // afterhit
     self add_menu("afterhit", self.menuname, "Verified");
-    self add_option("afterhit", "claymore r-mala", ::afterhitweapon, self.afterhit[0]);
-    self add_option("afterhit", "knuckles", ::afterhitweapon, self.afterhit[1]);
-    self add_option("afterhit", "random perk bottle", ::afterhitweapon, self.afterhit[2]);
+    self add_option("afterhit", "claymore r-mala", ::afterhitweapon, 0);
+    self add_option("afterhit", "knuckles", ::afterhitweapon, 1);
+    self add_option("afterhit", "random perk bottle", ::afterhitweapon, 2);
     if (level.script == "zm_tomb" || level.script == "zm_buried")
-        self add_option("afterhit", "chalk", ::afterhitweapon, self.afterhit[3]);
-    self add_option("afterhit", "syrette", ::afterhitweapon, self.afterhit[4]);
+        self add_option("afterhit", "chalk", ::afterhitweapon, 3);
+    self add_option("afterhit", "syrette", ::afterhitweapon, 4);
     if (level.script == "zm_prison")
     {
-        self add_option("afterhit", "tomahawk", ::afterhitweapon, self.afterhit[5]);
-        self add_option("afterhit", "afterlife hands", ::afterhitweapon, self.afterhit[6]);
+        self add_option("afterhit", "tomahawk", ::afterhitweapon, 5);
+        self add_option("afterhit", "afterlife hands", ::afterhitweapon, 6);
     }
     if (level.script == "zm_tomb")
-        self add_option("afterhit", "iron punch", ::afterhitweapon, self.afterhit[7]);
+        self add_option("afterhit", "iron punch", ::afterhitweapon, 7);
 
     // weapons:main
     self add_menu("weap", self.menuname, "Verified");
