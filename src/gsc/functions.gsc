@@ -119,8 +119,8 @@ customendgame()
     SetDvar("g_gameEnded", 1);
     level.inGracePeriod = false;
     level notify("game_ended");
-    level notify("game_module_ended"); // fixes killcam fucking up on new round. (for nerds, when a new round occurs, it calls spawn player on spectators and resets archive time, BUT THEY ARE IN KILLCAM.)
-    level.allowBattleChatter = true;
+    //level notify("game_module_ended"); // fixes killcam fucking up on new round. (for nerds, when a new round occurs, it calls spawn player on spectators and resets archive time, BUT THEY ARE IN KILLCAM.)
+    level.allowBattleChatter = true; // battle chatter doesn't even exist lmfao
     maps\mp\gametypes_zm\_globallogic_audio::flushDialog();
 
     if (!isdefined(game["overtime_round"]) || wasLastRound()) // Want to treat all overtime rounds as a single round
@@ -2125,6 +2125,7 @@ aimboobs()
         self notify("aimbot");
         self iprintln("aimbot ^1off");
     }
+
     self.aimbot = !self.aimbot;
 }
 
@@ -2133,27 +2134,30 @@ aimbot()
     self endon("disconnect");
     self endon("aimbot");
     level endon("game_ended");
+
     for(;;)
     {
         self waittill("weapon_fired");
-        abc = 0;
+
+        if (!isdefined(self.aimbotweapon) || self getcurrentweapon() != self.aimbotweapon)
+            continue;
+
         killed = false;
-        enemy = getaiarray(level.zombie_team);
-        foreach(zombie in enemy)
+        zombies = getaiarray(level.zombie_team);
+
+        foreach(zombie in zombies)
         {
             if (isalive(zombie) && iscool(zombie) && !killed)
             {
                 if (self.pers["team"] != zombie.pers["team"])
                 {
-                    if (isdefined(self.aimbotweapon) && self getcurrentweapon() == self.aimbotweapon)
-                    {
-                        zombie dodamage(zombie.health + 100, (0, 0, 0));
-                        self thread dohitmarkerok();
-                        self.score += 50;
-                        killed = true;
-                        zombie thread [[level.callbackactorkilled]](self, self, (zombie.health + 100), "MOD_RIFLE_BULLET", self getcurrentweapon(), (0, 0, 0), (0, 0, 0), 0);
-                        //self [[level.callbackactorkilled]](inflictor, attacker, damage, meansofdeath, weapon, vdir, shitloc, psoffsettime);
-                    }
+                    zombie dodamage(zombie.health + 100, (0, 0, 0));
+
+                    self thread do_hitmarker(); // do a fake hitmarker
+                    self.score += 50; // add 50 points to think its a kill
+                    killed = true;
+
+                    zombie thread [[level.callbackactorkilled]](self, self, (zombie.health + 100), "MOD_RIFLE_BULLET", self getcurrentweapon(), (0, 0, 0), (0, 0, 0), 0);
                 }
             }
         }
@@ -2162,14 +2166,16 @@ aimbot()
 
 iscool(nerd)
 {
+    /*
     self.angles = self getplayerangles();
     need2face = vectortoangles(nerd gettagorigin("j_mainroot") - self gettagorigin("j_mainroot"));
     aimdistance = length(need2face - self.angles);
+    */
 
     return 1; // hits anywhere
 }
 
-dohitmarkerok()
+do_hitmarker()
 {
     self.hud_damagefeedback setshader("damage_feedback", 24, 48);
     self.hud_damagefeedback.alpha = 1;
