@@ -26,7 +26,7 @@ for /F %%i in ('dir /a:d /b "%SEARCHPATH%\*"') do (
 )
 
 :: compile all files from temp
-gsc-tool.exe comp t6 %cd%\tmp\ > nul
+gsc-tool.exe comp t6 %cd%\tmp\
 
 echo - compiled gsc
 

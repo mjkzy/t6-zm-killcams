@@ -132,7 +132,7 @@ on_player_spawned()
         {
             if (isalive(self))
             {
-                self enableInvulnerability();
+                self enableinvulnerability();
                 self freezecontrols(true);
             }
             continue;

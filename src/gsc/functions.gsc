@@ -58,25 +58,25 @@ end_game_when_hit()
     }
 
     // wait until a zombie has spawned, then run the loop
-    enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
+    enemies = get_number_of_zombies();
     while (enemies <= 0)
     {
-        enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
+        enemies = get_number_of_zombies();
         wait 0.5;
     }
 
     for(;;)
     {
-        enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
+        enemies = get_number_of_zombies();
         if (enemies < 1 && level.is_last)
         {
             if (int(getdvar("g_ai")) != 1)
                 setdvar("g_ai", 1);
 
             level thread custom_end_game();
-
             break;
         }
+
         wait 0.05;
     }
 }
@@ -102,11 +102,9 @@ custom_end_game()
     {
         player closemenu();
         player closeingamemenu();
-        player EnableInvulnerability();
+        player enableinvulnerability();
         if (isdefined(player.revivetexthud))
-        {
             player.revivetexthud destroy();
-        }
     }
 
     level.zombie_vars["zombie_powerup_insta_kill_time"] = 0;
@@ -119,8 +117,7 @@ custom_end_game()
     SetDvar("g_gameEnded", 1);
     level.inGracePeriod = false;
     level notify("game_ended");
-    //level notify("game_module_ended"); // fixes killcam fucking up on new round. (for nerds, when a new round occurs, it calls spawn player on spectators and resets archive time, BUT THEY ARE IN KILLCAM.)
-    level.allowBattleChatter = true; // battle chatter doesn't even exist lmfao
+    //level notify("game_module_ended"); // is this even needed
     maps\mp\gametypes_zm\_globallogic_audio::flushDialog();
 
     if (!isdefined(game["overtime_round"]) || wasLastRound()) // Want to treat all overtime rounds as a single round
@@ -134,13 +131,10 @@ custom_end_game()
         }
     }
 
+    level.finalKillCam_winner = "none";
     if (isdefined(winner) && isdefined(level.teams[winner]))
     {
         level.finalKillCam_winner = winner;
-    }
-    else
-    {
-        level.finalKillCam_winner = "none";
     }
 
     level.finalKillCam_winnerPicked = true;
@@ -148,10 +142,7 @@ custom_end_game()
     setGameEndTime(0);
 
     maps\mp\gametypes_zm\_globallogic::updatePlacement();
-
     maps\mp\gametypes_zm\_globallogic::updateRankedMatch(winner);
-
-    players = level.players;
 
     newTime = getTime();
     gameLength = getGameLength();
@@ -187,15 +178,18 @@ custom_end_game()
         }
     }
 
-    foreach(player in level.players)
+    players = getplayers();
+    foreach(player in players)
     {
-        player thread destroyMenu(player);
-        //player maps\mp\gametypes_zm\_globallogic_player::freezePlayerForRoundEnd();
-        player thread keep_tryna_freeze();
-        player thread roundEndDoF(4.0);
+        if (!isdefined(player))
+            continue;
+
+        player thread destroy_menu();
+        player maps\mp\gametypes_zm\_globallogic_player::freezeplayerforroundend();
+        player thread roundenddof(4.0);
 
         // zombies think they are tough because we can't move at all
-        player EnableInvulnerability();
+        player enableinvulnerability();
         player maps\mp\gametypes_zm\_globallogic_ui::freeGameplayHudElems();
         player maps\mp\gametypes_zm\_weapons::updateWeaponTimings(newTime);
         player maps\mp\gametypes_zm\_globallogic::bbPlayerMatchEnd(gameLength, "", bbGameOver);
@@ -269,9 +263,13 @@ custom_end_game()
     level.intermission = true;
 
     //regain players array since some might've disconnected during the wait above
-    foreach(player in level.players)
+    players = getplayers();
+    foreach(player in players)
     {
-        player closeMenu();
+        if (!isdefined(player))
+            continue;
+
+        player closemenu();
         player closeInGameMenu();
         player notify ("reset_outcome");
         player thread [[level.spawnIntermission]]();
@@ -344,8 +342,12 @@ init_player_hitmarkers()
 
 displayGameEnd(winner)
 {
-    foreach(player in level.players)
+    players = getplayers();
+    foreach(player in players)
     {
+        if (!isdefined(player))
+            continue;
+
         player thread [[level.onTeamOutcomeNotify]](winner, false, "");
         player setClientUIVisibilityFlag("hud_visible", 0);
         player setClientUIVisibilityFlag("g_compassShowEnemies", 0);
@@ -436,7 +438,7 @@ outcome_notify_stub(winner, isround, endreasontext)
             teamicons[enemyteam].immunetodemofreecamera = 1;
             teamicons[enemyteam] fadeovertime(0.5);
             teamicons[enemyteam].alpha = 1;
-            
+
             currentx += iconspacing;
         }
     }
@@ -548,21 +550,21 @@ do_hitmarker_death()
 zombies_counter()
 {
     level endon("endZmCounter");
-    level.zombiesCounter = createServerFontString("hudsmall", 1.2);
-    level.zombiesCounter setPoint("CENTER", "CENTER", "CENTER", 210);
-    level.zombiesCounter.archived = 0;
-    level.zombiesCounter.hideWhenInMenu = true;
-    level.zombiesCounter thread waittillEnd();
+    level.zombies_counter = createServerFontString("hudsmall", 1.2);
+    level.zombies_counter setpoint("CENTER", "CENTER", "CENTER", 210);
+    level.zombies_counter.archived = 0;
+    level.zombies_counter.hideWhenInMenu = true;
+    level.zombies_counter thread waittillEnd();
     for(;;)
     {
-        enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
+        enemies = get_number_of_zombies();
         if (enemies == 0)
-            level.zombiesCounter.label = &"Zombies: ^1";
+            level.zombies_counter.label = &"Zombies: ^1";
         else if (enemies <= 3)
-            level.zombiesCounter.label = &"Zombies: ^3";
+            level.zombies_counter.label = &"Zombies: ^3";
         else if (enemies != 0)
-            level.zombiesCounter.label = &"Zombies: ^2";
-        level.zombiesCounter setValue(enemies);
+            level.zombies_counter.label = &"Zombies: ^2";
+        level.zombies_counter setValue(enemies);
         wait 0.05;
     }
 }
@@ -679,7 +681,7 @@ changeVerificationMenu(player, verlevel)
         player.status = verlevel;
 
         if (player.status == "Unverified")
-            player thread destroyMenu(player);
+            player thread destroy_menu();
 
         self iprintln("set level for " + player get_the_player_name() + " to " + verification_to_color(verlevel));
         player iprintln("your level has been set to " + verification_to_color(verlevel));
@@ -708,7 +710,6 @@ verification_to_letter(status)
 
 get_the_player_name()
 {
-    level endon("game_ended");
     player_name = self.name;
     for(i = 0; i < self.name.size; i++)
     {
@@ -812,7 +813,7 @@ get_upgrade(weapon)
     return get_upgrade_weapon(weapon, 1);
 }
 
-CreateMenu()
+create_menu()
 {
     self add_menu(self.menuname, undefined, "Verified");
     self add_option(self.menuname, "main", ::submenu, "mods", "main");
@@ -1423,7 +1424,7 @@ spawnbot()
     yaw = spawnpoint.angles[1];
     bot thread maps\mp\zombies\_zm::zbot_spawn_think(spawnpoint.origin, yaw);
 
-    team = level.players[0].team;
+    team = getplayers()[0].team;
     bot.switching_teams = 1;
     bot.joining_team = team;
     bot.leaving_team = self.pers["team"];
@@ -1447,12 +1448,16 @@ makebotinvis()
 
     if (!level.invisbot)
     {
-        foreach(bot in level.players)
+        players = getplayers();
+        foreach(player in players)
         {
-            if (isdefined(bot.pers["isBot"]) && bot.pers["isBot"])
+            if (!isdefined(player))
+                continue;
+
+            if (isdefined(player.pers["isBot"]) && player.pers["isBot"])
             {
-                bot hide();
-                bot thread keepinpos();
+                player hide();
+                player thread keepinpos();
             }
         }
         iprintln("bots invisible ^2on");
@@ -1460,12 +1465,16 @@ makebotinvis()
     }
     else
     {
-        foreach(bot in level.players)
+        players = getplayers();
+        foreach(player in players)
         {
-            if (isdefined(bot.pers["isBot"]) && bot.pers["isBot"])
+            if (!isdefined(player))
+                continue;
+
+            if (isdefined(player.pers["isBot"]) && player.pers["isBot"])
             {
-                bot show();
-                bot notify("bot_keepin");
+                player show();
+                player notify("bot_keepin");
             }
         }
         iprintln("bots invisible ^1off");
@@ -1487,11 +1496,15 @@ keepinpos()
 
 tpbotstocrosshair()
 {
-    foreach(bot in level.players)
+    players = getplayers();
+    foreach(player in players)
     {
-        if (isdefined(bot.pers["isBot"]) && bot.pers["isBot"])
+        if (!isdefined(player))
+            continue;
+
+        if (isdefined(player.pers["isBot"]) && player.pers["isBot"])
         {
-            bot setorigin(bullettrace(self gettagorigin("j_head"), self gettagorigin("j_head") + anglestoforward(self getplayerangles()) * 1000000, 0, self)["position"]);
+            player setorigin(bullettrace(self gettagorigin("j_head"), self gettagorigin("j_head") + anglestoforward(self getplayerangles()) * 1000000, 0, self)["position"]);
         }
     }
     self iprintln("bots ^1teleported ^7to crosshair^7");
@@ -1535,29 +1548,29 @@ instantend()
 
 togglezmcounter()
 {
-    if (!isdefined(level.zombieCounter))
-        level.zombieCounter = true;
+    if (!isdefined(level.zombie_counter))
+        level.zombie_counter = true;
 
-    if (!level.zombieCounter)
+    if (!level.zombie_counter)
     {
         iprintln("zombies counter ^2on");
         level thread zombies_counter();
     }
-    else if (level.zombieCounter)
+    else if (level.zombie_counter)
     {
         iprintln("zombies counter ^1off");
         level notify("endZmCounter");
-        level.zombiesCounter delete();
-        level.zombiesCounter destroy();
+        level.zombies_counter destroy();
     }
-    level.zombieCounter = !level.zombieCounter;
+
+    level.zombie_counter = !level.zombie_counter;
 }
 
 add_menu_alt(Menu, prevmenu)
 {
     self.menu.getmenu[Menu] = Menu;
     self.menu.menucount[Menu] = 0;
-    self.menu.previousmenu[Menu] = prevmenu;
+    self.menu.previous[Menu] = prevmenu;
 }
 
 add_menu(Menu, prevmenu, status)
@@ -1567,113 +1580,87 @@ add_menu(Menu, prevmenu, status)
     self.menu.scrollerpos[Menu] = 0;
     self.menu.curs[Menu] = 0;
     self.menu.menucount[Menu] = 0;
-    self.menu.previousmenu[Menu] = prevmenu;
+    self.menu.previous[Menu] = prevmenu;
 }
 
-add_option(Menu, Text, Func, arg1, arg2, tolower)
+add_option(menu, text, func, arg1, arg2, lower)
 {
-    if (!isdefined(tolower))
-        tolower = true;
+    if (!isdefined(lower)) lower = true;
 
-    Menu = self.menu.getmenu[Menu];
-    Num = self.menu.menucount[Menu];
-    if (tolower)
-        self.menu.menuopt[Menu][Num] = ToLower(Text);
-    else self.menu.menuopt[Menu][Num] = Text;
-    self.menu.menufunc[Menu][Num] = Func;
-    self.menu.menuinput[Menu][Num] = arg1;
-    self.menu.menuinput1[Menu][Num] = arg2;
-    self.menu.menucount[Menu] += 1;
+    menu = self.menu.getmenu[menu];
+    index = self.menu.menucount[menu];
+    if (lower)
+        self.menu.menuopt[menu][index] = tolower(text);
+    else
+        self.menu.menuopt[menu][index] = text;
+    self.menu.func[menu][index] = func;
+
+    self.menu.input[menu][index][0] = arg1;
+    self.menu.input[menu][index][1] = arg2;
+
+    self.menu.menucount[menu] += 1;
 }
 
 updatescrollbar()
 {
     self.menu.scroller MoveOverTime(0.10);
-    self.menu.scroller.y = 50 + (self.menu.curs[self.menu.currentmenu] * 14.40);
+    self.menu.scroller.y = 50 + (self.menu.curs[self.menu.current] * 14.40);
 }
 
-openTheMenu()
+open_menu()
 {
-    if (!isdefined(self.firstmenuopen))
-        self.firstmenuopen = true;
+    if (!isdefined(self.first_menu_open))
+        self.first_menu_open = true;
 
-    if (self.firstmenuopen)
+    if (self.first_menu_open)
     {
         self iPrintLn("[{+actionslot 1}] / [{+actionslot 2}] - up/down");
         self iPrintLn("[{+gostand}] - select");
         self iPrintLn("[{+activate}] - back");
-        self.firstmenuopen = false;
+        self.first_menu_open = false;
     }
 
-    self.menu.background thread moveItTo("x", 263+self.menuxpos, .4);
-    self.menu.scroller thread moveItTo("x", 263+self.menuxpos, .4);
-    self.menu.background FadeOverTime(0.6);
+    self.menu.background thread move_it_to("x", 263+self.menuxpos, .4);
+    self.menu.scroller thread move_it_to("x", 263+self.menuxpos, .4);
+    self.menu.background fadeovertime(0.6);
     self.menu.background.alpha = 0.55;
-    self.menu.scroller FadeOverTime(0.6);
+    self.menu.scroller fadeovertime(0.6);
     self.menu.scroller.alpha = 1;
-    self.menu.background1 FadeOverTime(0.6);
-    self.menu.background1.alpha = 0.08;
     wait 0.5;
     self store_text(self.menuname, self.menuname);
-    self.menu.title2 FadeOverTime(0.3);
+    self.menu.title2 fadeovertime(0.3);
     self.menu.title2.alpha = 1;
-    self.menu.backgroundinfo FadeOverTime(0.3);
-    self.menu.backgroundinfo.alpha = 1;
-    self.menu.title FadeOverTime(0.3);
-    self.swagtext.alpha = 0.90;
-    self.menu.counter FadeOverTime(0.3);
-    self.menu.counter1 FadeOverTime(0.3);
+    self.menu.counter fadeovertime(0.3);
+    self.menu.counter1 fadeovertime(0.3);
     self.menu.counter.alpha = 1;
     self.menu.counter1.alpha = 1;
-    self.menu.counterSlash FadeOverTime(0.3);
-    self.menu.counterSlash.alpha = 1;
-    self.menu.line MoveOverTime(0.3);
-    self.menu.line.y = -50;
-    self.menu.line2 MoveOverTime(0.3);
-    self.menu.line2.y = -50;
     self updatescrollbar();
-    self.menu.open = true;
+    self.menu.is_open = true;
 }
 
-closeTheMenu()
+close_menu()
 {
-    self.menu.options FadeOverTime(0.3);
+    self.menu.options fadeovertime(0.3);
     self.menu.options.alpha = 0;
-    self.statuss FadeOverTime(0.3);
-    self.statuss.alpha = 0;
-    self.tez FadeOverTime(0.3);
-    self.tez.alpha = 0;
-    self.menu.counter FadeOverTime(0.3);
-    self.menu.counter1 FadeOverTime(0.3);
+    self.menu_status fadeovertime(0.3);
+    self.menu_status.alpha = 0;
+    self.menu.counter fadeovertime(0.3);
+    self.menu.counter1 fadeovertime(0.3);
     self.menu.counter.alpha = 0;
     self.menu.counter1.alpha = 0;
-    self.menu.counterSlash FadeOverTime(0.3);
-    self.menu.counterSlash.alpha = 0;
-    self.swagtext FadeOverTime(0.30);
-    self.swagtext.alpha = 0;
-    self.menu.title2 FadeOverTime(0.3);
+    self.menu.title2 fadeovertime(0.3);
     self.menu.title2.alpha = 0;
-    self.menu.title FadeOverTime(0.30);
-    self.menu.title.alpha = 0;
-    self.menu.line MoveOverTime(0.30);
-    self.menu.line.y = -550;
-    self.menu.line2 MoveOverTime(0.30);
-    self.menu.line2.y = -550;
-    self.menu.backgroundinfo FadeOverTime(0.3);
-    self.menu.backgroundinfo.alpha = 0;
-    self.menu.open = false;
+    self.menu.is_open = false;
     wait 0.3;
-    self.menu.background1 FadeOverTime(0.3);
-    self.menu.background1.alpha = 0;
-    self.menu.scroller FadeOverTime(0.3);
+    self.menu.scroller fadeovertime(0.3);
     self.menu.scroller.alpha = 0;
-    self.menu.background FadeOverTime(0.3);
+    self.menu.background fadeovertime(0.3);
     self.menu.background.alpha = 0;
-    self.menu.background thread moveItTo("x", 800, .4);
-    self.menu.scroller thread moveItTo("x", 800, .4);
+    self.menu.background thread move_it_to("x", 800, .4);
+    self.menu.scroller thread move_it_to("x", 800, .4);
 }
 
-moveItTo(axis, position, time)
+move_it_to(axis, position, time)
 {
     self moveOverTime(time);
 
@@ -1683,59 +1670,51 @@ moveItTo(axis, position, time)
         self.y = position;
 }
 
-destroyMenu(player)
+destroy_menu()
 {
-    player.menu_init = false;
-    player closeTheMenu();
+    self.menu_init = false;
+    self close_menu();
     wait 0.3;
-    player.menu.options destroy();
-    player.menu.background1 destroy();
-    player.menu.backgroundMain destroy();
-    player.menu.backgroundMain2 destroy();
-    player.menu.scroller destroy();
-    player.menu.scroller1 destroy();
-    player.infos destroy();
-    player.menu.title2 destroy();
-    player.menu.counter destroy();
-    player.menu.counter1 destroy();
-    player.menu.line destroy();
-    player.menu.line2 destroy();
-    player.menu.counterSlash destroy();
-    player.menu.title destroy();
-    player notify("destroyMenu");
+    self.menu.options destroy();
+    self.menu.scroller destroy();
+    self.infos destroy();
+    self.menu.title2 destroy();
+    self.menu.counter destroy();
+    self.menu.counter1 destroy();
+    self notify("destroy_menu");
 }
 
-StoreShaders()
+store_shaders()
 {
     // got the color and alpha values from my killcam mod
     //drawShader(shader, x, y, width, height, color, alpha, sort)
     self.menu.background = self drawShader("white", 800, 25, 155, 286, (0, 0, 0), .2, 0);
     self.menu.scroller = self drawShader("white", 800, -100, 155, 12, (0.749, 0, 0), 255, 1);
-    self thread flickershaders();
+    self thread flicker_shaders();
 }
 
-flickershaders()
+flicker_shaders()
 {
     self endon("disconnect");
     level endon("game_ended");
     for(;;)
     {
-        if (self.menu.open)
+        if (self.menu.is_open)
         {
             waittime = randomFloatRange(0.3, 1.4);
             self.statuss.color = (0.2, 0, 0);
             self.menu.scroller.color = (0.2, 0, 0);
             self.menu.scroller.alpha = 1;
             wait waittime;
-            self.statuss FadeOverTime(waittime);
+            self.statuss fadeovertime(waittime);
             self.statuss.color = (1, 0, 0);
-            self.menu.scroller FadeOverTime(waittime);
+            self.menu.scroller fadeovertime(waittime);
             self.menu.scroller.color = (1, 0, 0);
             self.menu.scroller.alpha = 0.8;
             wait waittime;
-            self.statuss FadeOverTime(waittime);
+            self.statuss fadeovertime(waittime);
             self.statuss.color = (0, 0, 0);
-            self.menu.scroller FadeOverTime(waittime);
+            self.menu.scroller fadeovertime(waittime);
             self.menu.scroller.color = (0, 0, 0);
             self.menu.scroller.alpha = .0;
         }
@@ -1745,89 +1724,117 @@ flickershaders()
 
 store_text(menu, title)
 {
-    self.menu.currentmenu = menu;
+    self.menu.current = menu;
     string = "";
-    self.menu.currentmenu = menu;
-    string = "";
+
+    if (isdefined(self.menu.title2))
+        self.menu.title2 destroy();
     self.menu.title2 destroy();
-    self.menu.title2 = drawText(title, "default", 1.2, 255+self.menuxpos, 0, (1, 1, 1), 0, 3);
-    self.menu.title2 FadeOverTime(0);
+    self.menu.title2 = draw_text(title, "default", 1.2, 255+self.menuxpos, 0, (1, 1, 1), 0, (0, 0, 0), 0, 3);
+    self.menu.title2 fadeovertime(0);
     self.menu.title2.alpha = 1;
-    self.menu.title2 setPoint("LEFT", "LEFT", 550+self.menuxpos, -161);
+    self.menu.title2 setpoint("LEFT", "LEFT", 550+self.menuxpos, -161);
+
     for(i = 0; i < self.menu.menuopt[menu].size; i++)
     {
-        string +=self.menu.menuopt[menu][i] + "\n";
+        string += self.menu.menuopt[menu][i] + "\n";
     }
-    self.menu.counter destroy();
-    self.menu.counter = drawValue(self.menu.curs[menu] + 1, "objective", 1.2, "RIGHT", "CENTER", 325+self.menuxpos, -161, (1, 1, 1), 3);
+
+    if (isdefined(self.menu.counter))
+        self.menu.counter destroy();
+    self.menu.counter = self draw_value(self.menu.curs[menu] + 1, "objective", 1.2, "RIGHT", "CENTER", 325+self.menuxpos, -161, (1, 1, 1), 1, (0, 0, 0), 3, 69);
     self.menu.counter.alpha = 1;
-    self.menu.counter1 destroy();
-    self.menu.counter1 = drawValue(self.menu.menuopt[menu].size, "objective", 1.2, "RIGHT", "CENTER", 338+self.menuxpos, -161, (1, 1, 1), 3);
-    self.menu.counter1.alpha = 1;
-    self.statuss destroy();
-    self.statuss = drawText("by @mjkzys^7", "default", 1.1, 0+self.menuxpos, 0, (1, 1, 1), 0, 4);
-    self.statuss FadeOverTime(0);
-    self.statuss.alpha = 1;
-    self.statuss setPoint("LEFT", "LEFT", 550+self.menuxpos, 99);
-    self.menu.options destroy();
-    self.menu.options = drawText(string, "objective", 1.2, 290+self.menuxpos, 90, (1, 1, 1), 0, 4);
-    self.menu.options FadeOverTime(0.5);
+
+    if (isdefined(self.menu.counter1))
+        self.menu.counter1 destroy();
+    self.menu.counter1 = self draw_value(self.menu.menuopt[menu].size, "objective", 1.2, "RIGHT", "CENTER", 338+self.menuxpos, -161, (1, 1, 1), 1, (0, 0, 0), 3, 69);
+
+    if (isdefined(self.menu_status))
+        self.menu_status destroy();
+    self.menu_status = self draw_text("^7by @mjkzys^7", "default", 1.1, 0+self.menuxpos, 0, (1, 1, 1), 0, (0, 0, 0), 0, 4);
+    self.menu_status fadeovertime(0.25);
+    self.menu_status.alpha = 1;
+    self.menu_status setpoint("LEFT", "LEFT", 550+self.menuxpos, 99);
+
+    if (isdefined(self.menu.options))
+        self.menu.options destroy();
+    self.menu.options = self draw_text(string, "objective", 1.2, 290+self.menuxpos, 90, (1, 1, 1), 0, (0, 0, 0), 0, 4);
+    self.menu.options fadeovertime(0.5);
     self.menu.options.alpha = 1;
-    self.menu.options setPoint("LEFT", "LEFT", 550+self.menuxpos, -148);
+    self.menu.options setpoint("LEFT", "LEFT", 550+self.menuxpos, -148);
 }
 
 menu_init()
 {
     self endon("disconnect");
-    self endon("destroyMenu");
+    self endon("destroy_menu");
     level endon("game_ended");
     level endon("manual_end_game");
 
     self.menu = spawnstruct();
+    self.menu.is_open = false;
+
     self.toggles = spawnstruct();
 
-    self.menu.open = false;
-
-    self StoreShaders();
-    self CreateMenu();
+    self store_shaders();
+    self create_menu();
 
     for(;;)
     {
-        if (self actionSlotOneButtonPressed() && self adsButtonPressed() && !self.menu.open)
+        wait 0.05;
+
+        if (self actionSlotOneButtonPressed() && self adsButtonPressed() && !self.menu.is_open)
         {
-            self openTheMenu();
-            self setclientuivisibilityflag("hud_visible", 0);
+            self open_menu();
+            continue; // continue so we don't trigger the scroll because of actionslotone being pressed
         }
-        if (self.menu.open)
+
+        if (self.menu.is_open)
         {
-            if (self useButtonPressed())
+            up_dpad_pressed = self actionslotonebuttonpressed();
+            down_dpad_pressed = self actionslottwobuttonpressed();
+
+            if (up_dpad_pressed || down_dpad_pressed)
             {
-                if (isdefined(self.menu.previousmenu[self.menu.currentmenu]))
+                value = (down_dpad_pressed ? 1 : -1);
+                self.menu.curs[self.menu.current] += value;
+
+                self.menu.curs[self.menu.current] = ((self.menu.curs[self.menu.current] < 0) ? (self.menu.menuopt[self.menu.current].size - 1) : ((self.menu.curs[self.menu.current] > self.menu.menuopt[self.menu.current].size - 1) ? 0 : self.menu.curs[self.menu.current]));
+
+                self.menu.counter setvalue(self.menu.curs[self.menu.current] + 1);
+                self.menu.counter1 setvalue(self.menu.menuopt[self.menu.current].size);
+
+                self updatescrollbar();
+
+                wait 0.1;
+            }
+
+            if (self usebuttonpressed())
+            {
+                previous_menu = self.menu.previous[self.menu.current];
+                if (isdefined(previous_menu))
                 {
-                    self submenu(self.menu.previousmenu[self.menu.currentmenu], formatLocal(self.menu.previousmenu[self.menu.currentmenu]));
+                    self submenu(previous_menu, previous_menu);
                 }
                 else
                 {
-                    self closeTheMenu();
-                    self setclientuivisibilityflag("hud_visible", 1);
+                    self close_menu();
                 }
+
                 wait 0.2;
             }
-            else if (self actionSlotOneButtonPressed() || self actionSlotTwoButtonPressed())
+
+            if (self jumpbuttonpressed())
             {
-                self.menu.curs[self.menu.currentmenu] += (Iif(self actionSlotTwoButtonPressed(), 1, -1));
-                self.menu.curs[self.menu.currentmenu] = (Iif(self.menu.curs[self.menu.currentmenu] < 0, self.menu.menuopt[self.menu.currentmenu].size-1, Iif(self.menu.curs[self.menu.currentmenu] > self.menu.menuopt[self.menu.currentmenu].size-1, 0, self.menu.curs[self.menu.currentmenu])));
-                self.menu.counter setValue(self.menu.curs[self.menu.currentmenu] + 1);
-                self.menu.counter1 setValue(self.menu.menuopt[self.menu.currentmenu].size);
-                self updatescrollbar();
-            }
-            else if (self jumpButtonPressed())
-            {
-                self thread [[self.menu.menufunc[self.menu.currentmenu][self.menu.curs[self.menu.currentmenu]]]](self.menu.menuinput[self.menu.currentmenu][self.menu.curs[self.menu.currentmenu]], self.menu.menuinput1[self.menu.currentmenu][self.menu.curs[self.menu.currentmenu]]);
+                index = self.menu.curs[self.menu.current];
+                func = self.menu.func[self.menu.current][index];
+                input = self.menu.input[self.menu.current][index];
+
+                self thread [[func]](input[0], input[1], input[2]);
+
                 wait 0.2;
             }
         }
-        wait 0.05;
     }
 }
 
@@ -1877,176 +1884,6 @@ submenu(input, title, lower)
     }
 }
 
-overflow_fix()
-{
-    self.stringTable = [];
-    self.stringTableEntryCount = 0;
-    self.textTable = [];
-    self.textTableEntryCount = 0;
-    if (!isdefined(level.anchorText))
-    {
-        level.anchorText = createServerFontString("default", 1.5);
-        level.anchorText setText("anchor");
-        level.anchorText.alpha = 0;
-        level.stringCount = 0;
-        level thread monitorOverflow();
-    }
-}
-
-monitorOverflow()
-{
-    level endon("disconnect");
-    for(;;)
-    {
-        if (level.stringCount >= 60)
-        {
-            level.anchorText clearAllTextAfterHudElem();
-            level.stringCount = 0;
-            foreach(player in level.players)
-            {
-                player purgeTextTable();
-                player purgeStringTable();
-                player recreateText();
-            }
-        }
-        wait 0.05;
-    }
-}
-
-setSafeText(player, text)
-{
-    stringId = player getStringId(text);
-    if (stringId == -1)
-    {
-        player addStringTableEntry(text);
-        stringId = player getStringId(text);
-    }
-    player editTextTableEntry(self.textTableIndex, stringId);
-    self setText(text);
-}
-
-recreateText()
-{
-    foreach(entry in self.textTable)
-        entry.element setSafeText(self, lookUpStringById(entry.stringId));
-}
-
-addStringTableEntry(string)
-{
-    entry = spawnStruct();
-    entry.id = self.stringTableEntryCount;
-    entry.string = string;
-    self.stringTable[self.stringTable.size] = entry;
-    self.stringTableEntryCount++;
-    level.stringCount++;
-}
-
-lookUpStringById(id)
-{
-    string = "";
-    foreach(entry in self.stringTable)
-    {
-        if (entry.id == id)
-        {
-            string = entry.string;
-            break;
-        }
-    }
-    return string;
-}
-
-getStringId(string)
-{
-    id = -1;
-    foreach(entry in self.stringTable)
-    {
-        if (entry.string == string)
-        {
-            id = entry.id;
-            break;
-        }
-    }
-    return id;
-}
-
-getStringTableEntry(id)
-{
-    stringTableEntry = -1;
-    foreach(entry in self.stringTable)
-    {
-        if (entry.id == id)
-        {
-            stringTableEntry = entry;
-            break;
-        }
-    }
-    return stringTableEntry;
-}
-
-purgeStringTable()
-{
-    stringTable = [];
-    foreach(entry in self.textTable)
-    {
-        stringTable[stringTable.size] = getStringTableEntry(entry.stringId);
-    }
-    self.stringTable = stringTable;
-}
-
-purgeTextTable()
-{
-    textTable = [];
-    foreach(entry in self.textTable)
-    {
-        if (entry.id != -1)
-        {
-            textTable[textTable.size] = entry;
-        }
-    }
-    self.textTable = textTable;
-}
-
-addTextTableEntry(element, stringId)
-{
-    entry = spawnStruct();
-    entry.id = self.textTableEntryCount;
-    entry.element = element;
-    entry.stringId = stringId;
-    element.textTableIndex = entry.id;
-    self.textTable[self.textTable.size] = entry;
-    self.textTableEntryCount++;
-}
-
-editTextTableEntry(id, stringId)
-{
-    foreach(entry in self.textTable)
-    {
-        if (entry.id == id)
-        {
-            entry.stringId = stringId;
-            break;
-        }
-    }
-}
-
-deleteTextTableEntry(id)
-{
-    foreach(entry in self.textTable)
-    {
-        if (entry.id == id)
-        {
-            entry.id = -1;
-            entry.stringId = -1;
-        }
-    }
-}
-
-clear(player)
-{
-    if (self.type == "text") player deleteTextTableEntry(self.textTableIndex);
-    self destroy();
-}
-
 verify_on_connect()
 {
     self.status = "co";
@@ -2068,16 +1905,16 @@ last_cooldown()
     }
 
     // wait until a zombie has spawned, then run the loop
-    enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
+    enemies = get_number_of_zombies();
     while (enemies <= 0)
     {
-        enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
+        enemies = get_number_of_zombies();
         wait 0.5;
     }
 
     for(;;)
     {
-        enemies = maps\mp\zombies\_zm_utility::get_round_enemy_array().size + level.zombie_total;
+        enemies = get_number_of_zombies();
         if (is_false(level.is_last))
         {
             if (enemies > 0 && enemies <= 1)
@@ -2235,8 +2072,12 @@ makebotswatch(sendmsg)
     if (sendmsg)
         self iprintln("bots looked at ^1you");
 
-    foreach(player in level.players)
+    players = getplayers();
+    foreach(player in players)
     {
+        if (!isdefined(player))
+            continue;
+
         if (is_true(player.pers["isBot"]))
         {
             player setplayerangles(vectortoangles(self gettagorigin("j_head") - player gettagorigin("j_spine4")));
@@ -3162,10 +3003,13 @@ update_players_menu()
     self.menu.menucount["players_menu"] = 0;
     self.menu.menuopt["players_menu"] = []; // fixes bugs with players that are no longer in game to be off the list
 
-    players = level.players;
+    players = getplayers();
     for(i=0; i<players.size; i++)
     {
         player = players[i];
+        if (!isdefined(player))
+            continue;
+
         player_name = player get_the_player_name();
 
         player_size_fixed = players.size - 1;
@@ -3437,25 +3281,6 @@ fasthands()
         self unsetperk("specialty_fastweaponswitch");
         self iprintln("fast hands ^1off");
     }
-}
-
-keep_tryna_freeze()
-{
-    self freezecontrols(true);
-    wait 0.05;
-    self freezecontrols(true);
-    wait 0.05;
-    self freezecontrols(true);
-    wait 0.05;
-    self freezecontrols(true);
-    wait 0.05;
-    self freezecontrols(true);
-    wait 0.05;
-    self freezecontrols(true);
-    wait 0.05;
-    self freezecontrols(true);
-    wait 0.05;
-    self freezecontrols(true);
 }
 
 spawn_zombie()

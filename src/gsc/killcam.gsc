@@ -142,8 +142,12 @@ do_final_killcam()
 
     visionsetnaked(getdvar("mapname"), 0);
 
-    foreach (player in level.players)
+    players = getplayers();
+    foreach(player in players)
     {
+        if (!isdefined(player))
+            continue;
+
         player closemenu();
         player closeingamemenu();
         player thread final_killcam(winner);
@@ -163,8 +167,12 @@ do_final_killcam()
 
 are_any_players_watching()
 {
-    foreach(player in level.players)
+    players = getplayers();
+    foreach(player in players)
     {
+        if (!isdefined(player))
+            continue;
+
         if (is_true(player.killcam))
         {
             return true;
@@ -497,12 +505,12 @@ overlay(on, attacker, final)
         }
 
         self.hud = [];
-        self.hud[0] = self shader("CENTER", "CENTER", 0, -200, "white", 854, 80, color, 0.2, 1); //top bar
-        self.hud[1] = self shader("CENTER", "CENTER", 0, 200, "white", 854, 80, color, 0.2, 1); //bot bar
-        self.hud[2] = self shader("CENTER", "CENTER", 0, 180, "emblem_bg_default", 160, 40, (1, 1, 1), 0.9, 2); //calling card
-        self.hud[3] = self shader("CENTER", "CENTER", 5, 188, attacker.killcam_rank, 16, 16, (1, 1, 1), 1, 3); //player rank
-        self.hud[4] = self drawtext2(name, "LEFT", "CENTER", -44, 171, 1.20, "default", (1,1,1), 1, 3); //player name
-        self.hud[5] = self drawtext2(killcam_type(final), "CENTER", "CENTER", 0, -180, 3.25, "default", (1,1,1), 0.9, 3); //top text
+        self.hud[0] = self draw_shader("CENTER", "CENTER", 0, -200, "white", 854, 80, color, 0.2, 1); //top bar
+        self.hud[1] = self draw_shader("CENTER", "CENTER", 0, 200, "white", 854, 80, color, 0.2, 1); //bot bar
+        self.hud[2] = self draw_shader("CENTER", "CENTER", 0, 180, "emblem_bg_default", 160, 40, (1, 1, 1), 0.9, 2); //calling card
+        self.hud[3] = self draw_shader("CENTER", "CENTER", 5, 188, attacker.killcam_rank, 16, 16, (1, 1, 1), 1, 3); //player rank
+        self.hud[4] = self draw_text_2(name, "LEFT", "CENTER", -44, 171, 1.20, "default", (1,1,1), 1, 3); //player name
+        self.hud[5] = self draw_text_2(killcam_type(final), "CENTER", "CENTER", 0, -180, 3.25, "default", (1,1,1), 0.9, 3); //top text
         for(i = 0; i < self.hud.size; i++)
         {
             self.hud[i].foreground = true;
@@ -571,8 +579,13 @@ changekctime(time, is_default)
     }
 
     self iprintln("killcam length set to ^1" + newtime + " ^7seconds");
-    foreach(player in level.players)
+
+    players = getplayers();
+    foreach(player in players)
     {
+        if (!isdefined(player))
+            continue;
+
         if (self != player)
             player iprintln(self.name + " changed their killcam length to ^1" + newtime + " ^7seconds");
     }
