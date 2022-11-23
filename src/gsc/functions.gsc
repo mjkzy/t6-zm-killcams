@@ -3225,7 +3225,7 @@ afterhitweapon(index)
             self iprintln("cannot have more than ^1one^7 after hit on.");
             return;
         }
-        self iprintln("after hit ^2on ^7" + self.afterhit[index]["weapon"] + "(%s)");
+        self iprintln("after hit ^2on ^7(" + self.afterhit[index]["weapon"] + ")");
         self thread pullout_weapon(self.afterhit[index]["weapon"]);
     }
     else if (self.afterhit[index]["on"])
