@@ -476,7 +476,7 @@ overlay(on, attacker, final)
 {
     if (on)
     {
-        name = attacker.name;
+        name = attacker get_the_player_name();
         tag = "";
         prefix = -1;
         postfix = -1;

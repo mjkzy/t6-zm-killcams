@@ -329,15 +329,6 @@ init_player_hitmarkers()
     self.hud_damagefeedback.archived = 1;
     self.hud_damagefeedback.color = (1, 1, 1);
     self.hud_damagefeedback setshader("damage_feedback", 24, 48);
-    self.hud_damagefeedback_red = newdamageindicatorhudelem(self);
-    self.hud_damagefeedback_red.horzalign = "center";
-    self.hud_damagefeedback_red.vertalign = "middle";
-    self.hud_damagefeedback_red.x = -12;
-    self.hud_damagefeedback_red.y = -12;
-    self.hud_damagefeedback_red.alpha = 0;
-    self.hud_damagefeedback_red.archived = 1;
-    self.hud_damagefeedback_red.color = (1, 0, 0);
-    self.hud_damagefeedback_red setshader("damage_feedback", 24, 48);
 }
 
 displayGameEnd(winner)
@@ -1238,9 +1229,9 @@ godmode(player, silent)
         if (!silent)
         {
             if (player.godmode)
-                self iprintln(player.name + "'s god mode ^2on");
+                self iprintln(player get_the_player_name() + "'s god mode ^2on");
             else if (!player.godmode)
-                self iprintln(player.name + "'s god mode ^1off");
+                self iprintln(player get_the_player_name() + "'s god mode ^1off");
         }
     }
 }
@@ -1990,40 +1981,32 @@ aimbot()
 
         foreach(zombie in zombies)
         {
-            if (isalive(zombie) && iscool(zombie) && !killed)
+            if (isalive(zombie) && !killed)
             {
                 if (self.pers["team"] != zombie.pers["team"])
                 {
                     zombie dodamage(zombie.health + 100, (0, 0, 0));
 
-                    self thread do_hitmarker(); // do a fake hitmarker
+                    self.hud_damagefeedback setshader("damage_feedback", 24, 48);
+                    self.hud_damagefeedback.alpha = 1;
+                    self.hud_damagefeedback fadeovertime(1);
+                    self.hud_damagefeedback.alpha = 0;
+
                     self.score += 50; // add 50 points to think its a kill
-                    killed = true;
 
                     zombie thread [[level.callbackactorkilled]](self, self, (zombie.health + 100), "MOD_RIFLE_BULLET", self getcurrentweapon(), (0, 0, 0), (0, 0, 0), 0);
+                
+                    killed = true;
                 }
             }
         }
+
+        /*
+        zombie = getclosest(self getorigin(), getaiarray(level.zombie_team));
+        head = zombie gettagorigin("j_spineupper");
+        magicbullet(self getcurrentweapon(), self gettagorigin("j_spineupper"), head, self);
+        */
     }
-}
-
-iscool(nerd)
-{
-    /*
-    self.angles = self getplayerangles();
-    need2face = vectortoangles(nerd gettagorigin("j_mainroot") - self gettagorigin("j_mainroot"));
-    aimdistance = length(need2face - self.angles);
-    */
-
-    return 1; // hits anywhere
-}
-
-do_hitmarker()
-{
-    self.hud_damagefeedback setshader("damage_feedback", 24, 48);
-    self.hud_damagefeedback.alpha = 1;
-    self.hud_damagefeedback fadeovertime(1);
-    self.hud_damagefeedback.alpha = 0;
 }
 
 get_ai_number()
@@ -2050,7 +2033,7 @@ killplayer(player)
     if (is_true(player.godmode))
     {
         if (self != player)
-            self iprintln(player.name + " ^7has god mode ^2on");
+            self iprintln(player get_the_player_name() + " ^7has god mode ^2on");
         else
             self iprintln("you have god mode ^2on^7");
         return;
@@ -2062,7 +2045,7 @@ killplayer(player)
         player suicide();
 
     if (self != player)
-        self iprintln("you have ^1killed ^7" + player.name);
+        self iprintln("you have ^1killed ^7" + player get_the_player_name());
 }
 
 emptyClip()
@@ -3088,7 +3071,7 @@ teleport_player(from, to)
         return;
     }
 
-    from iprintlnbold("teleported to ^5" + to.name + "^7");
+    from iprintlnbold("teleported to ^5" + to get_the_player_name() + "^7");
     from setorigin(to.origin + (-10, 0, 0));
 }
 
