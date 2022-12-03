@@ -834,6 +834,8 @@ create_menu()
     self add_option("mods", "upgrade weapon (pap)", ::UpgradeWeapon);
     self add_option("mods", "downgrade weapon", ::DowngradeWeapon);
     self add_option("mods", "give ammo", ::maxammo);
+    if (level.script == "zm_tomb")
+        self add_option("mods", "biplane ride", ::spawn_biplane_ride, self);
 
     self add_menu("teleport", self.menuname, "Verified");
 
@@ -3272,4 +3274,52 @@ spawn_zombie()
 {
     self iprintln("spawning another zombie");
     level.zombie_total += 1;
+}
+
+spawn_biplane_ride(player)
+{
+    if (!isdefined(player) || !isplayer(player))
+        return;
+
+    s_biplane_pos = getstruct("air_crystal_biplane_pos", "targetname");
+    vh_biplane = spawnvehicle("veh_t6_dlc_zm_biplane", "air_crystal_biplane", "biplane_zm", s_biplane_pos.origin, s_biplane_pos.angles);
+    vh_biplane ent_flag_init("biplane_ride_down", 0);
+    vh_biplane setvisibletoall();
+    vh_biplane playloopsound("zmb_zombieblood_3rd_plane_loop", 1);
+    vh_biplane.health = 99999;
+    vh_biplane setcandamage(0);
+    vh_biplane setforcenocull();
+    vh_biplane attachpath(getvehiclenode("biplane_start", "targetname"));
+    vh_biplane startpath();
+    vh_biplane thread monitor_biplane_ride(player);
+
+    vh_biplane ent_flag_wait("biplane_ride_down");
+
+    vh_biplane playsound("zmb_zombieblood_3rd_plane_explode");
+    playfx(level._effect["biplane_explode"], vh_biplane.origin);
+    vh_biplane delete();
+}
+
+monitor_biplane_ride(player)
+{
+    self endon("death"); // don't think this event is used :P
+    self endon("biplane_ride_down");
+
+    player unlink();
+    player playerlinkto(self);
+    player iprintln("^2[{+gostand}] ^7to jump off plane");
+
+    wait 0.5;
+
+    for(;;)
+    {
+        if (player jumpbuttonpressed())
+        {
+            player unlink();
+            wait 1; // don't explode right away, but wait a second till player jumps out
+            self ent_flag_set("biplane_ride_down");
+        }
+
+        wait 0.05;
+    }
 }
