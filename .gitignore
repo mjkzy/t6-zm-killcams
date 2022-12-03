@@ -2,5 +2,6 @@ tools/zm-killcams.gsc
 zm-killcams.gsc
 *.orig
 c.bat
+test.bat
 *.zip
 tools/tmp
