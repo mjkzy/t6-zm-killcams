@@ -2107,11 +2107,6 @@ monitorbotlook(passval)
     }
 }
 
-setpoints()
-{
-    self.score = 69;
-}
-
 // https://github.com/Jbleezy/BO2-Reimagined/blob/master/_zm_reimagined.gsc#L167
 build_buildables()
 {
