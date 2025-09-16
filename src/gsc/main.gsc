@@ -4,6 +4,7 @@
 #include common_scripts\utility;
 #include maps\mp\gametypes_zm\_hud_util;
 #include maps\mp\gametypes_zm\_hud_message;
+
 #include maps\mp\zombies\_zm;
 #include maps\mp\zombies\_zm_audio;
 #include maps\mp\zombies\_zm_score;
@@ -25,10 +26,12 @@
 #include maps\mp\zombies\_zm_weapons;
 #include maps\mp\zombies\_zm_utility;
 
+#ifndef XB360
 main()
 {
     replacefunc(maps\mp\zombies\_zm_laststand::is_reviving, ::is_reviving_hook);
 }
+#endif
 
 init()
 {
@@ -62,6 +65,7 @@ init()
     maps\mp\zombies\_zm_spawner::register_zombie_death_event_callback(::do_hitmarker_death);
 
     level thread on_player_connect();
+
     level thread end_game_when_hit();
     level thread open_seseme();
     level thread zombies_counter();
@@ -98,19 +102,19 @@ on_player_connect()
     {
         level waittill("connected", player);
 
-        if (!isdefined(player.hud_damagefeedback))
-            player thread init_player_hitmarkers();
+        //if (!isdefined(player.hud_damagefeedback))
+        //    player thread init_player_hitmarkers();
 
         player thread on_player_spawned();
-        player thread verify_on_connect();
-        player thread spawn_on_join();
+        //player thread verify_on_connect();
+        //player thread spawn_on_join();
     }
 }
 
 on_player_spawned()
 {
     self endon("disconnect");
-    //level endon("game_ended");
+    level endon("game_ended");
 
     self.first = true;
     self.menuname = "main menu";
@@ -171,7 +175,7 @@ on_player_spawned()
 
             self iprintln("^7hello ^1" + self.name + " ^7& welcome to ^1mikey's zm mod^7!");
             self iprintln("^7hold [{+speed_throw}] & press [{+actionslot 1}] to open menu");
-            self iprintln("'last' is when ^11 ^7zombie are alive.");
+            self iprintln("'last' is when ^11 zombie ^7is alive.");
 
             self.first = false;
         }

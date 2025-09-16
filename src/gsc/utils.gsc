@@ -90,10 +90,7 @@ draw_value(value, font, fontScale, align, relative, x, y, color, alpha, glowColo
     return hud;
 }
 
-/*
-    overflow fix
-*/
-
+// overflow fix
 overflow_fix()
 {
     self.stringTable = [];

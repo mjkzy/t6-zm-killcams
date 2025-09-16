@@ -1843,12 +1843,6 @@ submenu(input, title, lower)
 
     if (verification_to_num(self.status) >= verification_to_num(self.menu.status[input]))
     {
-        // idk why i put this here, am i dumb
-        /*
-        if (isdefined(self.menu.options))
-            self.menu.options destroy();
-        */
-
         if (input == self.menuname)
             self thread store_text(input, self.menuname);
         else
@@ -2003,11 +1997,9 @@ aimbot()
             }
         }
 
-        /*
-        zombie = getclosest(self getorigin(), getaiarray(level.zombie_team));
-        head = zombie gettagorigin("j_spineupper");
-        magicbullet(self getcurrentweapon(), self gettagorigin("j_spineupper"), head, self);
-        */
+        //zombie = getclosest(self getorigin(), getaiarray(level.zombie_team));
+        //head = zombie gettagorigin("j_spineupper");
+        //magicbullet(self getcurrentweapon(), self gettagorigin("j_spineupper"), head, self);
     }
 }
 
@@ -2180,7 +2172,10 @@ buildbuildable(buildable, craft)
     player = get_players()[0];
     if (level.buildable_stubs.size == 0)
     {
-        print("Map parts are not loaded yet, restarting map..");
+#ifndef XB360
+        //print("Map parts are not loaded yet, restarting map..");
+#endif
+
         map_restart(0);
         return;
     }
@@ -2811,7 +2806,10 @@ buildcraftable(buildable)
     player = get_players()[0];
     if (level.a_uts_craftables.size == 0)
     {
-        print("Map craftables are not loaded yet, restarting map..");
+#ifndef XB360
+        //print("Map craftables are not loaded yet, restarting map..");
+#endif
+
         map_restart(0);
         return;
     }
@@ -3074,7 +3072,7 @@ teleport_player(from, to)
 
 kickplayer(player)
 {
-    kick(player);
+    //kick(player);
 }
 
 g_staff(weapon, name)
@@ -3141,11 +3139,7 @@ monitor_reviving()
     }
 }
 
-/*
-
-    REGISTER AFTER HIT HERE
-
-*/
+// REGISTER AFTER HIT HERE
 init_afterhit()
 {
     // after hit weap array
@@ -3318,3 +3312,4 @@ monitor_biplane_ride(player)
         wait 0.05;
     }
 }
+
